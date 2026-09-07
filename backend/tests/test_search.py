@@ -20,7 +20,7 @@ def test_search_reports(client: TestClient, db):
     db.commit()
 
     with patch("app.api.endpoints.search.get_ai_provider") as mock_get_provider:
-        from app.services.ai_provider import MockAIProvider
+        from app.providers.mock import MockAIProvider
         class TestMockProvider(MockAIProvider):
             async def generate_embedding(self, text):
                 return [0.1] * 768

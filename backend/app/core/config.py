@@ -25,7 +25,16 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost/sif_db"
     
     GEMINI_API_KEY: str = ""
-
+    
+    # Phase 2 configurations
+    AI_PROVIDER: str = "gemini"          # gemini | mock | local
+    AI_TIMEOUT_SECONDS: int = 10
+    AI_MAX_RETRIES: int = 3
+    LANGUAGE_CONFIDENCE_THRESHOLD: float = 0.90
+    MIN_REPORT_LENGTH: int = 10
+    MIN_SAMPLE_SIZE: int = 30
+    APP_MODE: str = "hybrid"             # offline | hybrid
+    PIPELINE_VERSION: str = "1.0.0"
     class Config:
         case_sensitive = True
         env_file = ".env"

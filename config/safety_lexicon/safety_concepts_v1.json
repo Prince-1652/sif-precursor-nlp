@@ -1,0 +1,9 @@
+{
+  "energized": "ENERGIZED_EQUIPMENT",
+  "live line": "ENERGIZED_EQUIPMENT",
+  "confined space": "CONFINED_SPACE",
+  "trench": "EXCAVATION",
+  "suspended load": "SUSPENDED_LOAD",
+  "working at height": "WORK_AT_HEIGHT",
+  "roof": "WORK_AT_HEIGHT"
+}

@@ -18,6 +18,9 @@ async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(
         raise HTTPException(status_code=400, detail="Only CSV files are allowed")
     
     content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10 MB limit
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB.")
+        
     job = process_csv_upload(db, content, file.filename)
     
     # Trigger background processing for the newly ingested reports
@@ -51,17 +54,160 @@ async def trigger_report_processing(report_id: UUID, background_tasks: Backgroun
     background_tasks.add_task(process_report, str(report_id))
     return {"message": "Processing started in background"}
 
+from pydantic import BaseModel
+from typing import Optional
+
+class ReviewActionRequest(BaseModel):
+    decision: str
+    corrected_lsr_ids: Optional[List[str]] = None
+    corrected_entities: Optional[List[dict]] = None
+    comment: Optional[str] = None
+    original_prediction_id: Optional[UUID] = None
+
+@router.post("/{report_id}/review")
+def submit_review(report_id: UUID, review_in: ReviewActionRequest, db: Session = Depends(deps.get_db)):
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    from app.models.review import ReviewAction
+    from app.models.audit import AuditEvent
+    
+    review = ReviewAction(
+        report_id=report.id,
+        reviewer_id="human_reviewer", # hardcoded for now until auth is added
+        decision=review_in.decision,
+        original_prediction_id=review_in.original_prediction_id,
+        corrected_lsr_ids=review_in.corrected_lsr_ids,
+        corrected_entities=review_in.corrected_entities,
+        comment=review_in.comment
+    )
+    db.add(review)
+    
+    # Update report status
+    if review_in.decision == "CONFIRM":
+        report.processing_status = "COMPLETED"
+    elif review_in.decision == "EDIT":
+        report.processing_status = "COMPLETED_WITH_EDITS"
+    elif review_in.decision == "REJECT":
+        report.processing_status = "REJECTED"
+        
+    # Audit trail
+    db.add(AuditEvent(
+        report_id=report.id,
+        job_id=report.job_id,
+        event_type="REVIEWED",
+        actor_type="HUMAN",
+        actor_id="human_reviewer",
+        payload={"decision": review_in.decision, "comment": review_in.comment}
+    ))
+    
+    db.commit()
+    return {"status": "success", "decision": review_in.decision}
+
 @router.get("", response_model=List[ReportResponse])
 def get_reports(db: Session = Depends(deps.get_db), limit: int = 50):
     return db.query(Report).order_by(Report.created_at.desc()).limit(limit).all()
 
-@router.get("/stats")
-def get_stats(db: Session = Depends(deps.get_db)) -> Dict[str, Any]:
-    total_reports = db.query(Report).count()
-    completed_reports = db.query(Report).filter(Report.processing_status == 'COMPLETED').count()
-    high_severity = db.query(Report).filter(Report.severity_score >= 4).count()
+@router.get("/{report_id}")
+def get_report_details(report_id: UUID, db: Session = Depends(deps.get_db)):
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    from app.models.sif_prediction import SIFPrediction
+    from app.models.lsr_prediction import LSRPrediction
+    from app.models.entity import Entity
+    from app.models.barrier import Barrier
+    from app.models.evidence import EvidenceItem
+    from app.models.normalization import ReportNormalization
+    
+    sif = db.query(SIFPrediction).filter(SIFPrediction.report_id == str(report.id), SIFPrediction.is_current == True).first()
+    lsrs = db.query(LSRPrediction).filter(LSRPrediction.report_id == str(report.id), LSRPrediction.is_current == True).all()
+    entities = db.query(Entity).filter(Entity.report_id == str(report.id)).all()
+    barriers = db.query(Barrier).filter(Barrier.report_id == str(report.id)).all()
+    evidence = db.query(EvidenceItem).filter(EvidenceItem.report_id == str(report.id)).all()
+    normalizations = db.query(ReportNormalization).filter(ReportNormalization.report_id == str(report.id)).all()
+    
     return {
-        "total_reports": total_reports,
-        "completed_reports": completed_reports,
-        "high_severity": high_severity
+        "report": {
+            "id": report.id,
+            "original_text": report.original_text,
+            "normalized_text": report.normalized_text,
+            "processing_status": report.processing_status,
+            "processing_path": report.processing_path,
+            "sif_potential": report.sif_potential,
+            "sif_score": report.sif_score,
+            "risk_band": report.risk_band,
+            "ai_used": report.ai_used,
+            "language_code": report.language_code
+        },
+        "sif_prediction": sif,
+        "lsr_predictions": lsrs,
+        "entities": entities,
+        "barriers": barriers,
+        "evidence": evidence,
+        "normalizations": normalizations
+    }
+
+from pydantic import BaseModel
+from typing import Optional
+
+class AnalyzeRequest(BaseModel):
+    original_text: str
+    report_type: Optional[str] = None
+    site_id: Optional[str] = None
+    source_record_id: Optional[str] = None
+    reported_at: Optional[str] = None
+
+@router.post("/analyze")
+async def analyze_report_sync(req: AnalyzeRequest):
+    # Synchronously run the pipeline for the given text without DB saving
+    from app.engines.preprocessing.pipeline import run_preprocessing
+    from app.engines.language_gate.detector import LanguageDetector
+    from app.engines.language_gate.gate import decide_routing, LanguageGateDecision
+    from app.providers import get_ai_provider
+    from app.engines.sif import sif_engine
+    from app.engines.lsr import lsr_engine
+    from app.engines.entities import entity_engine
+    from app.engines.decision import decision_engine
+    import asyncio
+    
+    prep_result = run_preprocessing(req.original_text)
+    if not prep_result.is_valid:
+        return {"error": "Invalid text", "details": prep_result.validation_errors}
+        
+    detector = LanguageDetector()
+    detection = detector.detect(prep_result.normalized_text)
+    decision = decide_routing(detection, len(prep_result.normalized_text))
+    
+    ai_used = False
+    norm_text = prep_result.normalized_text
+    
+    if decision not in [LanguageGateDecision.INSUFFICIENT_TEXT, LanguageGateDecision.REVIEW_REQUIRED, LanguageGateDecision.DETERMINISTIC_ENGLISH]:
+        ai_used = True
+        provider = get_ai_provider()
+        norm_res = await provider.normalize_text(norm_text)
+        norm_text = norm_res.normalized_text
+        
+    sif_result, lsr_results, entity_results = await asyncio.gather(
+        sif_engine.analyze(norm_text),
+        lsr_engine.analyze(norm_text),
+        entity_engine.extract(norm_text)
+    )
+    
+    review_state, contradictions = decision_engine.orchestrate(sif_result, lsr_results, entity_results)
+    
+    return {
+        "processing_path": decision.value,
+        "ai_used": ai_used,
+        "normalized_text": norm_text,
+        "normalization": {
+            "normalization_trace": prep_result.normalization_trace
+        },
+        "sif_prediction": sif_result,
+        "lsr_predictions": lsr_results,
+        "entities": entity_results,
+        "review_state": review_state,
+        "contradictions": contradictions
     }

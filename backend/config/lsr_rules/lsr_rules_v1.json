@@ -1,0 +1,56 @@
+[
+  {
+    "rule_code": "ENERGY_ISOLATION",
+    "positive_terms": ["loto", "lockout", "tagout", "isolation", "energized", "live line"],
+    "negative_contexts": ["training", "completed correctly", "verified safe", "properly isolated"],
+    "danger_patterns": ["not isolated", "loto not applied", "energized during maintenance", "bypassed lockout"]
+  },
+  {
+    "rule_code": "CONFINED_SPACE",
+    "positive_terms": ["confined space", "vessel", "tank", "trench", "manhole"],
+    "negative_contexts": ["permit issued", "gas test clear", "authorized entry"],
+    "danger_patterns": ["without permit", "no gas test", "unauthorized entry", "fainted"]
+  },
+  {
+    "rule_code": "WORKING_AT_HEIGHT",
+    "positive_terms": ["height", "roof", "scaffold", "ladder", "fall protection", "harness"],
+    "negative_contexts": ["tied off", "harness secured", "scaffold inspected"],
+    "danger_patterns": ["fell", "no harness", "not tied off", "unsecured"]
+  },
+  {
+    "rule_code": "SAFE_MECHANICAL_LIFTING",
+    "positive_terms": ["lifting", "crane", "hoist", "suspended load", "rigging"],
+    "negative_contexts": ["barricaded", "lift plan followed", "load secure"],
+    "danger_patterns": ["dropped load", "under suspended load", "rigging failed", "failed lift"]
+  },
+  {
+    "rule_code": "BYPASSING_SAFETY_CONTROLS",
+    "positive_terms": ["safety control", "interlock", "guard", "bypass"],
+    "negative_contexts": ["authorized bypass", "management of change", "moc"],
+    "danger_patterns": ["bypassed guard", "removed interlock", "disabled safety"]
+  },
+  {
+    "rule_code": "DRIVING",
+    "positive_terms": ["vehicle", "driving", "truck", "forklift", "speeding", "seatbelt"],
+    "negative_contexts": ["seatbelt worn", "speed limit observed", "parked safely"],
+    "danger_patterns": ["speeding", "no seatbelt", "collision", "struck by vehicle"]
+  },
+  {
+    "rule_code": "HOT_WORK",
+    "positive_terms": ["hot work", "welding", "cutting", "grinding", "spark"],
+    "negative_contexts": ["hot work permit", "fire watch present", "area wetted"],
+    "danger_patterns": ["no fire watch", "without permit", "sparks ignited"]
+  },
+  {
+    "rule_code": "LINE_OF_FIRE",
+    "positive_terms": ["line of fire", "struck by", "pinch point", "crushed"],
+    "negative_contexts": ["stood clear", "barricaded area"],
+    "danger_patterns": ["struck by", "caught between", "hand crushed"]
+  },
+  {
+    "rule_code": "PERMIT_TO_WORK",
+    "positive_terms": ["permit", "ptw", "authorization"],
+    "negative_contexts": ["permit issued", "signed permit"],
+    "danger_patterns": ["working without permit", "expired permit", "no permit"]
+  }
+]

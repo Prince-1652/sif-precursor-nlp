@@ -16,34 +16,62 @@ def test_process_report_success(db):
     db.commit()
     report_id = str(report.id)
     
-    with patch("app.services.processing.get_ai_provider") as mock_get_provider:
-        from app.services.ai_provider import MockAIProvider, SafetyAnalysisResult
+    with patch("app.services.processing.get_ai_provider") as mock_get_provider, \
+         patch("app.services.processing.sif_engine") as mock_sif, \
+         patch("app.services.processing.lsr_engine") as mock_lsr, \
+         patch("app.services.processing.entity_engine") as mock_ent:
+        
+        from app.providers.mock import MockAIProvider
+        from app.providers.base import NormalizationResult
         class TestMockProvider(MockAIProvider):
-            async def analyze_safety(self, text):
-                return SafetyAnalysisResult(
-                    hazards=["Oil spill"],
-                    root_causes=["Leaking valve"],
-                    severity_score=4,
-                    sif_potential=True,
-                    sif_score=0.9,
-                    risk_band="HIGH",
-                    life_saving_rules=["Energy Isolation"],
-                    precursors=["Failed valve"]
-                )
+            async def normalize_text(self, text):
+                return NormalizationResult(normalized_text=f"Normalized: {text}", language_detected="en", confidence=0.99)
             async def generate_embedding(self, text):
                 return [0.5] * 768
         
         mock_get_provider.return_value = TestMockProvider()
+        
+        # AsyncMock for engines
+        import asyncio
+        async def mock_sif_analyze(text):
+            return {
+                "sif_potential": True, "score": 0.9, "confidence": 1.0,
+                "risk_band": "HIGH", "engine": "test", "evidence": []
+            }
+        async def mock_lsr_analyze(text):
+            return [{
+                "rule_id": "ENERGY_ISOLATION", "score": 1.0, "confidence": 1.0,
+                "matched_phrases": [], "method": "test"
+            }]
+        async def mock_ent_extract(text):
+            return [{
+                "entity_type": "HAZARD", "value": "Oil spill",
+                "normalized_value": "Oil spill", "source_start": 0, "source_end": 5,
+                "confidence": 1.0, "extraction_method": "test", "status": "UNKNOWN"
+            }]
+            
+        mock_sif.analyze.side_effect = mock_sif_analyze
+        mock_lsr.analyze.side_effect = mock_lsr_analyze
+        mock_ent.extract.side_effect = mock_ent_extract
         
         process_report(report_id)
         
     # Since process_report uses its own session, we should use a fresh query or refresh
     db.expire_all()
     updated_report = db.query(Report).filter(Report.id == report_id).first()
+    assert updated_report.processing_status in ["AUTO_ACCEPTED_HIGH_CONFIDENCE", "REVIEW_RECOMMENDED", "REVIEW_REQUIRED"]
+    assert updated_report.sif_potential is True
+    assert float(updated_report.sif_score) == 0.9
+    assert updated_report.risk_band == "HIGH"
     
-    assert updated_report.processing_status == "COMPLETED"
-    assert updated_report.extracted_hazards == ["Oil spill"]
-    assert updated_report.root_causes == ["Leaking valve"]
-    assert updated_report.severity_score == 4
-    assert len(updated_report.vector_embedding) == 768
-    assert updated_report.ai_used is True
+    from app.models.entity import Entity
+    from app.models.sif_prediction import SIFPrediction
+    
+    entities = db.query(Entity).filter(Entity.report_id == report_id).all()
+    assert len(entities) > 0
+    hazards = [e.value for e in entities if e.entity_type == "HAZARD"]
+    assert "Oil spill" in hazards
+    
+    sif_pred = db.query(SIFPrediction).filter(SIFPrediction.report_id == report_id).first()
+    assert sif_pred is not None
+    assert sif_pred.sif_potential is True

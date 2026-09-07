@@ -77,3 +77,10 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Ignore sensitive files and folders
+screenshots/
+missing.md
+synthetic_reports.csv
+.tempmediaStorage/
+.user_uploaded/

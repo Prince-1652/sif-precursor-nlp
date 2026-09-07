@@ -1,0 +1,14 @@
+[
+  {
+    "rule_code": "ENERGY_ISOLATION",
+    "positive_terms": ["loto", "lockout", "tagout", "isolation", "energized"],
+    "negative_contexts": ["training", "completed correctly", "verified safe", "not required"],
+    "danger_patterns": ["not isolated", "loto not applied", "energized during maintenance", "live line"]
+  },
+  {
+    "rule_code": "WORKING_AT_HEIGHT",
+    "positive_terms": ["height", "fall protection", "harness", "scaffold", "roof"],
+    "negative_contexts": ["training", "inspected", "ground level", "100% tied off"],
+    "danger_patterns": ["no harness", "not tied off", "open edge", "scaffold incomplete"]
+  }
+]

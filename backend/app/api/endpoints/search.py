@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.api import deps
+from app.models.base import SessionLocal
 from app.schemas.report import ReportResponse
 from app.models.report import Report
-from app.services.ai_provider import get_ai_provider
+from app.providers import get_ai_provider
 
 router = APIRouter()
 

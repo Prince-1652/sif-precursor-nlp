@@ -47,11 +47,23 @@ def process_csv_upload(db: Session, file_content: bytes, filename: str) -> Proce
                     source_record_id=source_record_id,
                     source_hash=source_hash,
                     report_type=report_type,
+                    job_id=job.id,
                     original_text=original_text,
                     processing_status="READY",
                     pipeline_version="1.0.0"
                 )
                 db.add(report)
+                db.flush()
+                
+                from app.models.audit import AuditEvent
+                audit = AuditEvent(
+                    report_id=report.id,
+                    job_id=job.id,
+                    event_type="INGESTED",
+                    actor_type="SYSTEM",
+                    payload={"source": "csv", "filename": filename}
+                )
+                db.add(audit)
             processed += 1
         except IntegrityError:
             failed += 1

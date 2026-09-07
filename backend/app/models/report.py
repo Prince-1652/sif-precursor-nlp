@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Text, Numeric, ForeignKey, CHAR, UniqueConstraint, Integer
+from sqlalchemy import Column, String, Boolean, DateTime, Text, Numeric, ForeignKey, CHAR, UniqueConstraint, Integer, Index
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
@@ -15,6 +15,7 @@ class Report(Base):
     source_hash = Column(CHAR(64), nullable=False)
     site_id = Column(UUID(as_uuid=True), ForeignKey("sites.id"), nullable=True)
     report_type = Column(String(64), nullable=False, index=True)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("processing_jobs.id"), nullable=True)
     reported_at = Column(DateTime(timezone=True), nullable=True)
     original_text = Column(Text, nullable=False)
     normalized_text = Column(Text, nullable=True)
@@ -27,16 +28,10 @@ class Report(Base):
     is_synthetic = Column(Boolean, nullable=False, default=False, index=True)
     pipeline_version = Column(String(64), nullable=False)
     
-    extracted_hazards = Column(JSONB, nullable=True)
-    root_causes = Column(JSONB, nullable=True)
-    severity_score = Column(Integer, nullable=True)
-    
     # Phase 7, 8, 9 additions
     sif_potential = Column(Boolean, nullable=True)
     sif_score = Column(Numeric(5, 4), nullable=True)
     risk_band = Column(String(32), nullable=True)
-    life_saving_rules = Column(JSONB, nullable=True)
-    precursors = Column(JSONB, nullable=True)
     vector_embedding = Column(Vector(768), nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
@@ -46,4 +41,5 @@ class Report(Base):
 
     __table_args__ = (
         UniqueConstraint('source', 'source_record_id', name='uq_report_source_id'),
+        Index("ix_reports_site_reported", "site_id", "reported_at"),
     )
