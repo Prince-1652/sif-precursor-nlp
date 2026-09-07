@@ -1,0 +1,66 @@
+import csv
+import io
+import hashlib
+from typing import List, Tuple
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from app.models.report import Report
+from app.models.job import ProcessingJob
+
+def generate_source_hash(text: str) -> str:
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+def process_csv_upload(db: Session, file_content: bytes, filename: str) -> ProcessingJob:
+    decoded_content = file_content.decode('utf-8-sig')
+    csv_reader = csv.DictReader(io.StringIO(decoded_content))
+    
+    rows = list(csv_reader)
+    total_records = len(rows)
+    
+    job = ProcessingJob(
+        job_type="CSV_INGESTION",
+        status="RUNNING",
+        total_records=total_records,
+        idempotency_key=filename
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    processed = 0
+    failed = 0
+
+    for row in rows:
+        try:
+            with db.begin_nested():
+                original_text = row.get('original_text', '').strip()
+                if not original_text:
+                    raise ValueError("Missing text")
+                    
+                source_record_id = row.get('source_record_id', '').strip() or None
+                report_type = row.get('report_type', 'unknown').strip()
+                
+                source_hash = generate_source_hash(original_text)
+                
+                report = Report(
+                    source="csv",
+                    source_record_id=source_record_id,
+                    source_hash=source_hash,
+                    report_type=report_type,
+                    original_text=original_text,
+                    processing_status="READY",
+                    pipeline_version="1.0.0"
+                )
+                db.add(report)
+            processed += 1
+        except IntegrityError:
+            failed += 1
+        except Exception:
+            failed += 1
+
+    job.processed_records = processed
+    job.failed_records = failed
+    job.status = "COMPLETED" if failed == 0 else ("PARTIAL" if processed > 0 else "FAILED")
+    db.commit()
+    
+    return job
