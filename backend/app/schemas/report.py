@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -8,7 +8,7 @@ class ReportBase(BaseModel):
     source_record_id: Optional[str] = None
     report_type: str
     reported_at: Optional[datetime] = None
-    original_text: str
+    original_text: str = Field(..., max_length=50000)
     site_id: Optional[UUID] = None
 
 class ReportCreate(ReportBase):

@@ -1,7 +1,8 @@
-from sqlalchemy import Column, String, ForeignKey, Text
+from sqlalchemy import Column, String, ForeignKey, Text, DateTime
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
+from datetime import datetime, timezone
 from .base import Base
 
 class ReviewAction(Base):
@@ -16,8 +17,6 @@ class ReviewAction(Base):
     corrected_entities = Column(JSONB, nullable=True)
     comment = Column(Text, nullable=True)
     
-    from datetime import datetime, timezone
-    from sqlalchemy import DateTime
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     report = relationship("Report")

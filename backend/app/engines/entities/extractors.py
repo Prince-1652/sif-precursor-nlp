@@ -19,13 +19,23 @@ def extract_entities_from_text(text_lower: str) -> List[Dict[str, Any]]:
                     elif any(w in context for w in ["completed", "verified", "used"]):
                         status = "SUCCESSFUL"
                         
+                # Calculate confidence based on context clarity
+                confidence = 0.8  # Base confidence for dictionary match
+                if entity_type == "BARRIER":
+                    if status == "FAILED":
+                        confidence = 0.95  # Clear failure context
+                    elif status == "SUCCESSFUL":
+                        confidence = 0.90
+                    else:
+                        confidence = 0.6  # Unknown status = less confident
+
                 entities.append({
                     "entity_type": entity_type,
                     "value": keyword,
                     "normalized_value": keyword,
                     "source_start": match.start(),
                     "source_end": match.end(),
-                    "confidence": 1.0,
+                    "confidence": confidence,
                     "extraction_method": "dictionary_v1",
                     "status": status  # only relevant for BARRIER
                 })

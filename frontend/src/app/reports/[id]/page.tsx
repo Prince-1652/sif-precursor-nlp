@@ -10,6 +10,8 @@ export default function ReportDetailPage() {
   const reportId = params.id as string;
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editComment, setEditComment] = useState("");
 
   const fetchReport = useCallback(async () => {
     try {
@@ -38,12 +40,18 @@ export default function ReportDetailPage() {
 
   const handleReview = async (decision: string) => {
     try {
+      const payload: any = { decision };
+      if (decision === "EDIT") {
+        payload.comment = editComment;
+      }
       const res = await fetch(`/api/v1/reports/${reportId}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
+        setIsEditing(false);
+        setEditComment("");
         fetchReport();
       }
     } catch (e) {
@@ -151,21 +159,23 @@ export default function ReportDetailPage() {
           </div>
           
           {/* Normalization Trace */}
-          {report.normalizations && report.normalizations.length > 0 && report.normalizations[0].normalization_trace && (
-             <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
-               <h3 className="text-lg font-semibold text-white mb-4">Normalization Trace</h3>
-               <div className="space-y-3">
-                 {report.normalizations[0].normalization_trace.map((trace: any, idx: number) => (
-                   <div key={idx} className="flex items-center gap-3 text-sm text-gray-400 bg-black/40 p-3 rounded-lg">
-                     <span className="font-mono text-gray-300">"{trace.from || trace.found || trace.rule}"</span>
-                     <ArrowRight size={14} className="text-gray-500" />
-                     <span className="font-mono text-green-400">"{trace.to || trace.concept || trace.language}"</span>
-                     <span className="ml-auto text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">Rule: {trace.rule}</span>
-                   </div>
-                 ))}
-               </div>
-             </div>
-          )}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
+            <h3 className="text-lg font-semibold text-white mb-4">Normalization Trace</h3>
+            <div className="space-y-3">
+              {report.normalizations && report.normalizations.length > 0 && report.normalizations[0].normalization_trace && report.normalizations[0].normalization_trace.length > 0 ? (
+                report.normalizations[0].normalization_trace.map((trace: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-3 text-sm text-gray-400 bg-black/40 p-3 rounded-lg">
+                    <span className="font-mono text-gray-300">"{trace.from || trace.found || trace.rule}"</span>
+                    <ArrowRight size={14} className="text-gray-500" />
+                    <span className="font-mono text-green-400">"{trace.to || trace.concept || trace.language}"</span>
+                    <span className="ml-auto text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">Rule: {trace.rule}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-500 text-sm p-3 bg-black/20 rounded-lg">No normalization needed.</div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Right Column: AI & Analysis Sidebar */}
@@ -227,20 +237,68 @@ export default function ReportDetailPage() {
             )}
           </div>
 
+          {/* Review History */}
+          {report.reviews && report.reviews.length > 0 && (
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Review History</h3>
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                {report.reviews.map((rev: any, idx: number) => (
+                  <div key={idx} className="bg-black/40 border border-white/5 p-4 rounded-xl space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-gray-300">{rev.reviewer_id}</span>
+                      <span className="text-gray-500">{new Date(rev.created_at).toLocaleString()}</span>
+                    </div>
+                    <div className="text-xs">
+                      Decision: <span className={`font-semibold ${rev.decision === 'CONFIRM' ? 'text-blue-400' : rev.decision === 'REJECT' ? 'text-red-400' : 'text-gray-300'}`}>{rev.decision}</span>
+                    </div>
+                    {rev.comment && (
+                      <div className="text-sm text-gray-300 mt-2 p-3 bg-white/5 rounded-lg border border-white/5">
+                        {rev.comment}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Review Actions */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Review Action</h3>
-            <div className="space-y-3">
-              <button onClick={() => handleReview("CONFIRM")} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-blue-500/20">
-                Confirm Machine Decision
-              </button>
-              <button onClick={() => handleReview("REJECT")} className="w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 font-medium py-3 rounded-xl transition-colors shadow-lg shadow-red-500/10">
-                Reject Decision
-              </button>
-              <button onClick={() => handleReview("EDIT")} className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-medium py-3 rounded-xl transition-colors">
-                Override / Edit
-              </button>
-            </div>
+            {!isEditing ? (
+              <div className="space-y-3">
+                <button onClick={() => handleReview("CONFIRM")} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-blue-500/20">
+                  Confirm Machine Decision
+                </button>
+                <button onClick={() => handleReview("REJECT")} className="w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 font-medium py-3 rounded-xl transition-colors shadow-lg shadow-red-500/10">
+                  Reject Decision
+                </button>
+                <button onClick={() => setIsEditing(true)} className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-medium py-3 rounded-xl transition-colors">
+                  Override / Edit
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3 animate-in fade-in">
+                <textarea 
+                  value={editComment}
+                  onChange={(e) => setEditComment(e.target.value)}
+                  placeholder="Enter correction notes..."
+                  className="w-full h-24 bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => setIsEditing(false)} className="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 py-2 rounded-lg text-sm transition-colors border border-white/10">
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={() => handleReview("EDIT")} 
+                    disabled={!editComment.trim()}
+                    className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2 rounded-lg text-sm transition-colors shadow-lg shadow-blue-500/20"
+                  >
+                    Submit Edit
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>

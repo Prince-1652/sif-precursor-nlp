@@ -18,10 +18,13 @@ class LSRMatcher:
             # Check danger patterns first (highest weight)
             for pattern in rule.danger_patterns:
                 for match in re.finditer(r'\b' + re.escape(pattern) + r'\b', text_lower):
-                    # verify it's not in a negative context
+                    # verify it's not in a negative context (local window only)
+                    ctx_start = max(0, match.start() - 50)
+                    ctx_end = min(len(text_lower), match.end() + 50)
+                    local_context = text_lower[ctx_start:ctx_end]
                     context_safe = True
                     for neg in rule.negative_contexts:
-                        if re.search(r'\b' + re.escape(neg) + r'\b', text_lower):
+                        if re.search(r'\b' + re.escape(neg) + r'\b', local_context):
                             context_safe = False
                             break
                     if context_safe:
@@ -37,10 +40,13 @@ class LSRMatcher:
             # Check positive terms
             for term in rule.positive_terms:
                 for match in re.finditer(r'\b' + re.escape(term) + r'\b', text_lower):
-                    # verify it's not in a negative context
+                    # verify it's not in a negative context (local window only)
+                    ctx_start = max(0, match.start() - 50)
+                    ctx_end = min(len(text_lower), match.end() + 50)
+                    local_context = text_lower[ctx_start:ctx_end]
                     context_safe = True
                     for neg in rule.negative_contexts:
-                        if re.search(r'\b' + re.escape(neg) + r'\b', text_lower):
+                        if re.search(r'\b' + re.escape(neg) + r'\b', local_context):
                             context_safe = False
                             break
                     if context_safe:

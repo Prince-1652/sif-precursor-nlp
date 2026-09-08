@@ -47,7 +47,7 @@ def mine_patterns(db: Session) -> list[dict]:
             "lsr_rule": rule,
             "failed_barrier": barrier,
             "frequency": freq,
-            "trend": "STABLE"
+            "trend": "INSUFFICIENT_DATA"  # TODO: Implement period-over-period trend calculation
         })
         
     return patterns

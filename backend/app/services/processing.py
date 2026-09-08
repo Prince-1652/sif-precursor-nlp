@@ -126,13 +126,24 @@ async def process_report_async(report_id: str):
         elif decision == LanguageGateDecision.DETERMINISTIC_ENGLISH or settings.APP_MODE == "offline":
             report.ai_used = False
             if decision == LanguageGateDecision.AI_NORMALIZATION and settings.APP_MODE == "offline":
-                decision = LanguageGateDecision.REVIEW_REQUIRED
+                report.processing_status = "REVIEW_REQUIRED"
+                report.processing_path = "offline_no_ai"
+                db.commit()
+                audit("PROCESSING_SKIPPED", {"reason": "Non-English in offline mode, AI unavailable"})
+                return
         else:
             # AI_NORMALIZATION
             report.ai_used = True
             try:
                 with stage_timer(db, report.job_id, report.id, "AI_NORMALIZATION"):
                     norm_result = await provider.normalize_text(prep_result.normalized_text)
+                    
+                    db.query(ReportNormalization).filter(
+                        ReportNormalization.report_id == str(report.id),
+                        ReportNormalization.is_current == True
+                    ).update({"is_current": False})
+                    db.flush()
+                    
                     ai_norm_record = ReportNormalization(
                         report_id=report.id,
                         method="ai_semantic",
@@ -278,7 +289,16 @@ async def process_report_async(report_id: str):
         db.close()
 
 def process_report(report_id: str):
-    asyncio.run(process_report_async(report_id))
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                pool.submit(lambda: asyncio.run(process_report_async(report_id))).result()
+        else:
+            asyncio.run(process_report_async(report_id))
+    except RuntimeError:
+        asyncio.run(process_report_async(report_id))
 
 def process_pending_reports():
     db: Session = SessionLocal()
@@ -289,4 +309,7 @@ def process_pending_reports():
         db.close()
         
     for rid in report_ids:
-        process_report(rid)
+        try:
+            process_report(rid)
+        except Exception as e:
+            logger.error(f"Failed to process report {rid}: {e}")

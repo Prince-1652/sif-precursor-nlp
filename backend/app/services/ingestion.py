@@ -17,6 +17,14 @@ def process_csv_upload(db: Session, file_content: bytes, filename: str) -> Proce
     rows = list(csv_reader)
     total_records = len(rows)
     
+    existing_job = db.query(ProcessingJob).filter(
+        ProcessingJob.idempotency_key == filename,
+        ProcessingJob.status.in_(["RUNNING", "COMPLETED"])
+    ).first()
+    
+    if existing_job:
+        return existing_job
+    
     job = ProcessingJob(
         job_type="CSV_INGESTION",
         status="RUNNING",
@@ -40,13 +48,42 @@ def process_csv_upload(db: Session, file_content: bytes, filename: str) -> Proce
                 source_record_id = row.get('source_record_id', '').strip() or None
                 report_type = row.get('report_type', 'unknown').strip()
                 
+                site_id = None
+                site_code = row.get('site', '').strip()
+                if site_code:
+                    from app.models.site import Site
+                    site = db.query(Site).filter(Site.site_code == site_code).first()
+                    if site:
+                        site_id = site.id
+                
+                reported_at = None
+                date_str = row.get('reported_at', '').strip() or row.get('date', '').strip()
+                if date_str:
+                    from datetime import datetime
+                    for fmt in ('%Y-%m-%d', '%Y-%m-%dT%H:%M:%S', '%d/%m/%Y', '%m/%d/%Y'):
+                        try:
+                            reported_at = datetime.strptime(date_str, fmt)
+                            break
+                        except ValueError:
+                            continue
+                
                 source_hash = generate_source_hash(original_text)
+                
+                existing = db.query(Report).filter(
+                    Report.source == "csv",
+                    Report.source_hash == source_hash
+                ).first()
+                if existing:
+                    failed += 1
+                    continue
                 
                 report = Report(
                     source="csv",
                     source_record_id=source_record_id,
                     source_hash=source_hash,
+                    site_id=site_id,
                     report_type=report_type,
+                    reported_at=reported_at,
                     job_id=job.id,
                     original_text=original_text,
                     processing_status="READY",

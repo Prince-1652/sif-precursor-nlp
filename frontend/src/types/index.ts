@@ -26,3 +26,35 @@ export interface DashboardStats {
   completed_reports: number;
   high_severity: number;
 }
+
+export interface DashboardSummary {
+  total_reports: number;
+  sif_count: number;
+  sif_percentage: number;
+  high_risk_count: number;
+  review_count: number;
+  ai_processed_count: number;
+  total_sites: number;
+  lsr_distribution: Record<string, number>;
+  generated_at: string;
+  volume_trend?: string;
+  sif_trend?: string;
+  trending_terms?: string[];
+}
+
+export interface SiteDensity {
+  site_id: string;
+  valid_reports: number;
+  sif_reports: number;
+  density: number;
+  low_sample: boolean;
+}
+
+export interface Pattern {
+  site_id: string;
+  activity: string;
+  lsr_rule: string;
+  failed_barrier: string;
+  frequency: number;
+  trend: string;
+}

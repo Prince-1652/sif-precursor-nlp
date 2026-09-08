@@ -42,7 +42,23 @@ def compute_trends(db: Session):
         else:
             sif_trend = "STABLE"
 
+    # Trending terms
+    from app.models.entity import Entity
+    from sqlalchemy import desc
+    
+    recent_terms = db.query(Entity.value, func.count(Entity.id).label('count')) \
+        .join(Report, Entity.report_id == Report.id) \
+        .filter(Report.created_at >= thirty_days_ago) \
+        .filter(Entity.entity_type.in_(['HAZARD', 'ACTIVITY'])) \
+        .group_by(Entity.value) \
+        .order_by(desc('count')) \
+        .limit(5) \
+        .all()
+        
+    trending_terms = [t[0] for t in recent_terms]
+
     return {
         "sif_trend": sif_trend,
-        "volume_trend": volume_trend
+        "volume_trend": volume_trend,
+        "trending_terms": trending_terms
     }

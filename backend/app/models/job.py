@@ -27,7 +27,7 @@ class ProcessingAttempt(Base):
     __tablename__ = "processing_attempts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    job_id = Column(UUID(as_uuid=True), ForeignKey("processing_jobs.id"), nullable=False)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("processing_jobs.id"), nullable=True)
     report_id = Column(UUID(as_uuid=True), ForeignKey("reports.id"), nullable=True, index=True)
     stage = Column(String(64), nullable=False, index=True)
     attempt_number = Column(Integer, nullable=False, default=1)

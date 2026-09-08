@@ -29,4 +29,5 @@ async def search_reports(query: str, limit: int = 10, db: Session = Depends(deps
         
         return reports
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Avoid exposing internal DB/Vector details
+        raise HTTPException(status_code=500, detail="An error occurred during search. Please try again.")

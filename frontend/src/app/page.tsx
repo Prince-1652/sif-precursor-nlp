@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { DashboardSummary, SiteDensity, Pattern } from "@/types";
 
 export default function DashboardPage() {
-  const [summary, setSummary] = useState<any>(null);
-  const [sites, setSites] = useState<any>(null);
-  const [patterns, setPatterns] = useState<any>(null);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [sites, setSites] = useState<{sites: SiteDensity[]} | null>(null);
+  const [patterns, setPatterns] = useState<{patterns: Pattern[]} | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -20,8 +22,9 @@ export default function DashboardPage() {
         if (sumRes.ok) setSummary(await sumRes.json());
         if (sitesRes.ok) setSites(await sitesRes.json());
         if (patternsRes.ok) setPatterns(await patternsRes.json());
-      } catch (e) {
+      } catch (e: any) {
         console.error(e);
+        setError("Failed to load dashboard data. Please make sure the backend is running.");
       } finally {
         setLoading(false);
       }
@@ -31,6 +34,16 @@ export default function DashboardPage() {
 
   if (loading) {
     return <div className="p-8 text-gray-400">Loading Dashboard...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 animate-in fade-in">
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl">
+          {error}
+        </div>
+      </div>
+    );
   }
 
   if (!summary) return null;
@@ -64,6 +77,20 @@ export default function DashboardPage() {
         <MetricCard title="High Risk" value={summary.high_risk_count} color="text-orange-500" />
         <MetricCard title="Pending Review" value={summary.review_count} color="text-yellow-500" />
       </div>
+
+      {/* Trending Terms */}
+      {summary.trending_terms && summary.trending_terms.length > 0 && (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Trending Terms (Last 30 Days)</h2>
+          <div className="flex flex-wrap gap-2">
+            {summary.trending_terms.map((term: string, idx: number) => (
+              <span key={idx} className="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full text-sm font-medium">
+                {term}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* SIF Donut */}

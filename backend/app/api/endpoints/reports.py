@@ -9,6 +9,8 @@ from app.schemas.report import ReportResponse, ReportCreate
 from app.models.report import Report
 from app.services.ingestion import process_csv_upload
 from app.services.processing import process_report, process_pending_reports
+from app.core.security import limiter
+from fastapi import Request
 
 router = APIRouter()
 
@@ -17,9 +19,20 @@ async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="Only CSV files are allowed")
     
-    content = await file.read()
-    if len(content) > 10 * 1024 * 1024:  # 10 MB limit
-        raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB.")
+    MAX_SIZE = 10 * 1024 * 1024  # 10 MB
+    chunks = []
+    total_size = 0
+    
+    while True:
+        chunk = await file.read(8192)
+        if not chunk:
+            break
+        total_size += len(chunk)
+        if total_size > MAX_SIZE:
+            raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB.")
+        chunks.append(chunk)
+    
+    content = b"".join(chunks)
         
     job = process_csv_upload(db, content, file.filename)
     
@@ -54,11 +67,17 @@ async def trigger_report_processing(report_id: UUID, background_tasks: Backgroun
     background_tasks.add_task(process_report, str(report_id))
     return {"message": "Processing started in background"}
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
+from enum import Enum
+
+class ReviewDecision(str, Enum):
+    CONFIRM = "CONFIRM"
+    REJECT = "REJECT"
+    EDIT = "EDIT"
 
 class ReviewActionRequest(BaseModel):
-    decision: str
+    decision: ReviewDecision
     corrected_lsr_ids: Optional[List[str]] = None
     corrected_entities: Optional[List[dict]] = None
     comment: Optional[str] = None
@@ -76,7 +95,7 @@ def submit_review(report_id: UUID, review_in: ReviewActionRequest, db: Session =
     review = ReviewAction(
         report_id=report.id,
         reviewer_id="human_reviewer", # hardcoded for now until auth is added
-        decision=review_in.decision,
+        decision=review_in.decision.value,
         original_prediction_id=review_in.original_prediction_id,
         corrected_lsr_ids=review_in.corrected_lsr_ids,
         corrected_entities=review_in.corrected_entities,
@@ -85,11 +104,11 @@ def submit_review(report_id: UUID, review_in: ReviewActionRequest, db: Session =
     db.add(review)
     
     # Update report status
-    if review_in.decision == "CONFIRM":
+    if review_in.decision.value == "CONFIRM":
         report.processing_status = "COMPLETED"
-    elif review_in.decision == "EDIT":
+    elif review_in.decision.value == "EDIT":
         report.processing_status = "COMPLETED_WITH_EDITS"
-    elif review_in.decision == "REJECT":
+    elif review_in.decision.value == "REJECT":
         report.processing_status = "REJECTED"
         
     # Audit trail
@@ -99,7 +118,7 @@ def submit_review(report_id: UUID, review_in: ReviewActionRequest, db: Session =
         event_type="REVIEWED",
         actor_type="HUMAN",
         actor_id="human_reviewer",
-        payload={"decision": review_in.decision, "comment": review_in.comment}
+        payload={"decision": review_in.decision.value, "comment": review_in.comment}
     ))
     
     db.commit()
@@ -121,6 +140,7 @@ def get_report_details(report_id: UUID, db: Session = Depends(deps.get_db)):
     from app.models.barrier import Barrier
     from app.models.evidence import EvidenceItem
     from app.models.normalization import ReportNormalization
+    from app.models.review import ReviewAction
     
     sif = db.query(SIFPrediction).filter(SIFPrediction.report_id == str(report.id), SIFPrediction.is_current == True).first()
     lsrs = db.query(LSRPrediction).filter(LSRPrediction.report_id == str(report.id), LSRPrediction.is_current == True).all()
@@ -128,7 +148,18 @@ def get_report_details(report_id: UUID, db: Session = Depends(deps.get_db)):
     barriers = db.query(Barrier).filter(Barrier.report_id == str(report.id)).all()
     evidence = db.query(EvidenceItem).filter(EvidenceItem.report_id == str(report.id)).all()
     normalizations = db.query(ReportNormalization).filter(ReportNormalization.report_id == str(report.id)).all()
+    reviews = db.query(ReviewAction).filter(ReviewAction.report_id == str(report.id)).order_by(ReviewAction.created_at.desc()).all()
     
+    lsr_data = []
+    for lsr in lsrs:
+        lsr_data.append({
+            "id": lsr.id,
+            "rule_id": lsr.rule.rule_code if lsr.rule else str(lsr.rule_id),
+            "confidence": float(lsr.confidence) if lsr.confidence else 0.0,
+            "score": float(lsr.score) if lsr.score else 0.0,
+            "matched_phrases": lsr.matched_phrases
+        })
+
     return {
         "report": {
             "id": report.id,
@@ -143,25 +174,27 @@ def get_report_details(report_id: UUID, db: Session = Depends(deps.get_db)):
             "language_code": report.language_code
         },
         "sif_prediction": sif,
-        "lsr_predictions": lsrs,
+        "lsr_predictions": lsr_data,
         "entities": entities,
         "barriers": barriers,
         "evidence": evidence,
-        "normalizations": normalizations
+        "normalizations": normalizations,
+        "reviews": reviews
     }
 
 from pydantic import BaseModel
 from typing import Optional
 
 class AnalyzeRequest(BaseModel):
-    original_text: str
+    original_text: str = Field(..., max_length=50000)
     report_type: Optional[str] = None
     site_id: Optional[str] = None
     source_record_id: Optional[str] = None
     reported_at: Optional[str] = None
 
 @router.post("/analyze")
-async def analyze_report_sync(req: AnalyzeRequest):
+@limiter.limit("20/minute")
+async def analyze_report_sync(request: Request, req: AnalyzeRequest):
     # Synchronously run the pipeline for the given text without DB saving
     from app.engines.preprocessing.pipeline import run_preprocessing
     from app.engines.language_gate.detector import LanguageDetector

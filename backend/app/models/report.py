@@ -20,7 +20,7 @@ class Report(Base):
     original_text = Column(Text, nullable=False)
     normalized_text = Column(Text, nullable=True)
     language_code = Column(String(32), nullable=True)
-    language_confidence = Column(Numeric(5, 4), nullable=True)
+    language_confidence = Column(Numeric(6, 5), nullable=True)
     is_mixed_language = Column(Boolean, nullable=False, default=False)
     processing_path = Column(String(64), nullable=True)
     processing_status = Column(String(64), nullable=False, index=True)
@@ -30,7 +30,7 @@ class Report(Base):
     
     # Phase 7, 8, 9 additions
     sif_potential = Column(Boolean, nullable=True)
-    sif_score = Column(Numeric(5, 4), nullable=True)
+    sif_score = Column(Numeric(6, 5), nullable=True)
     risk_band = Column(String(32), nullable=True)
     vector_embedding = Column(Vector(768), nullable=True)
 

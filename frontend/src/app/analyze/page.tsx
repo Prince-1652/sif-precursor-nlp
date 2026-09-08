@@ -25,7 +25,7 @@ export default function AnalyzePage() {
         body: JSON.stringify({
           original_text: text,
           report_type: reportType,
-          site_id: "SYNC-TEST",
+          site_id: undefined,
           source_record_id: sourceId || undefined,
           reported_at: reportDate ? new Date(reportDate).toISOString() : undefined
         })
@@ -45,7 +45,7 @@ export default function AnalyzePage() {
           }
         }
         setError(errorMsg);
-        console.error("Analysis failed:", errorData);
+        console.error("Analysis failed:", errorData || `HTTP ${res.status}`);
       }
     } catch (e: any) {
       setError(e.message || "Network error occurred");
@@ -153,7 +153,7 @@ export default function AnalyzePage() {
 
               <div className="bg-white/5 border border-white/10 rounded-xl p-6">
                  <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Normalization Trace</h3>
-                 {result.normalization && result.normalization.normalization_trace ? (
+                 {result.normalization && result.normalization.normalization_trace && result.normalization.normalization_trace.length > 0 ? (
                    <div className="space-y-2">
                      {result.normalization.normalization_trace.map((trace: any, idx: number) => (
                        <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
@@ -164,7 +164,7 @@ export default function AnalyzePage() {
                      ))}
                    </div>
                  ) : (
-                   <div className="text-gray-500 text-sm">No trace data.</div>
+                   <div className="text-gray-500 text-sm">No normalization needed.</div>
                  )}
               </div>
             </div>

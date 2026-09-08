@@ -30,8 +30,8 @@ def test_health_dependencies():
     assert data["database"] == "ok"
     
 def test_reports_analyze():
-    response = client.post("/api/v1/reports/analyze", json={"text": "A worker fell from a height and hit their head on the pavement. Energy isolation was missing."})
+    response = client.post("/api/v1/reports/analyze", json={"original_text": "A worker fell from a height and hit their head on the pavement. Energy isolation was missing."})
     assert response.status_code == 200
     data = response.json()
-    assert "sif_result" in data
+    assert "sif_prediction" in data
     assert "review_state" in data

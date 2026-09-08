@@ -1,7 +1,8 @@
-from sqlalchemy import Column, String, Boolean, Numeric, ForeignKey, Index
+from sqlalchemy import Column, String, Boolean, Numeric, ForeignKey, Index, DateTime
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
+from datetime import datetime, timezone
 from .base import Base
 
 class SIFPrediction(Base):
@@ -11,13 +12,14 @@ class SIFPrediction(Base):
     report_id = Column(UUID(as_uuid=True), ForeignKey("reports.id"), nullable=False)
     is_current = Column(Boolean, nullable=False, default=True)
     sif_potential = Column(Boolean, nullable=False)
-    score = Column(Numeric(5, 4), nullable=False)
-    confidence = Column(Numeric(5, 4), nullable=False)
+    score = Column(Numeric(6, 5), nullable=False)
+    confidence = Column(Numeric(6, 5), nullable=False)
     risk_band = Column(String(32), nullable=False)
     engine_name = Column(String(64), nullable=False)
     engine_version = Column(String(64), nullable=False)
     method = Column(String(64), nullable=False)
     evidence_summary = Column(JSONB, nullable=False, default=list)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     report = relationship("Report")
 
