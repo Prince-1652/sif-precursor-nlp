@@ -115,12 +115,12 @@ export default function DashboardPage() {
           <h2 className="text-xl font-semibold text-white mb-6">LSR Matches</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={lsrData} layout="vertical" margin={{ left: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
-                <XAxis type="number" stroke="#888" />
-                <YAxis dataKey="name" type="category" stroke="#888" width={120} tick={{fontSize: 10}} />
-                <RechartsTooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none' }} />
-                <Bar dataKey="count" fill="#6366f1" radius={[0, 4, 4, 0]} />
+              <BarChart data={lsrData} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                <XAxis dataKey="name" stroke="#888" interval={0} tick={{fontSize: 10, angle: -45, textAnchor: 'end'}} height={80} />
+                <YAxis type="number" stroke="#888" allowDecimals={false} />
+                <RechartsTooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none' }} cursor={{fill: '#ffffff0a'}} />
+                <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -176,7 +176,7 @@ export default function DashboardPage() {
                   <th className="px-4 py-3 font-medium">Activity</th>
                   <th className="px-4 py-3 font-medium">LSR Rule</th>
                   <th className="px-4 py-3 font-medium">Failed Barrier</th>
-                  <th className="px-4 py-3 font-medium rounded-tr-lg">Frequency</th>
+                  <th className="px-4 py-3 font-medium rounded-tr-lg" title="Number of times this specific barrier failed">Frequency (Failed Barrier)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">

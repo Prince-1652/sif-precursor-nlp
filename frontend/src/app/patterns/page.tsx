@@ -56,7 +56,7 @@ export default function PatternsPage() {
                     <td className="px-6 py-4">{pattern.activity}</td>
                     <td className="px-6 py-4">
                       <span className="bg-orange-500/10 text-orange-400 px-2.5 py-1 rounded border border-orange-500/20 text-xs">
-                        {pattern.rule_id}
+                        {pattern.lsr_rule}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-red-400">{pattern.failed_barrier}</td>

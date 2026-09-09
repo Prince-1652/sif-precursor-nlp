@@ -31,6 +31,44 @@ app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["jobs"], dependenci
 app.include_router(search.router, prefix="/api/v1/search", tags=["search"], dependencies=[Depends(verify_api_key)])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"], dependencies=[Depends(verify_api_key)])
 
+import asyncio
+import logging
+from datetime import datetime, timezone, timedelta
+from app.models.base import SessionLocal
+from app.models.report import Report
+
+logger = logging.getLogger(__name__)
+
+async def dlq_retry_worker():
+    while True:
+        await asyncio.sleep(60 * 5) # check every 5 minutes
+        try:
+            db = SessionLocal()
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=1.5)
+            
+            stuck_reports = db.query(Report).filter(
+                Report.processing_status == "DLQ",
+                Report.updated_at < cutoff
+            ).all()
+            
+            if stuck_reports:
+                stuck_ids = [r.id for r in stuck_reports]
+                db.query(Report).filter(Report.id.in_(stuck_ids)).update({"processing_status": "READY"}, synchronize_session=False)
+                db.commit()
+                logger.info(f"DLQ Auto-recovery: Re-queued {len(stuck_ids)} reports.")
+                
+                from app.services.processing import process_pending_reports
+                process_pending_reports()
+        except Exception as e:
+            logger.error(f"DLQ retry worker error: {e}")
+        finally:
+            if 'db' in locals():
+                db.close()
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(dlq_retry_worker())
+
 @app.get("/api/v1/health")
 @limiter.limit("60/minute")
 def health_check(request: Request):

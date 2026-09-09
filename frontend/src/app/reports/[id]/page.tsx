@@ -61,7 +61,7 @@ export default function ReportDetailPage() {
 
   // A helper to highlight text based on evidence items
   const renderHighlightedText = () => {
-    const text = report.report?.original_text || "";
+    const text = report.report?.normalized_text || report.report?.original_text || "";
     if (!report.evidence || report.evidence.length === 0) {
       return (
         <p className="text-gray-300 leading-relaxed text-lg bg-white/5 p-6 rounded-xl border border-white/10">
@@ -106,6 +106,26 @@ export default function ReportDetailPage() {
 
     return (
       <div className="space-y-4">
+        
+        {report.report?.ai_used ? (
+          <>
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <FileCheck className="text-gray-500" size={16} /> Original Text (Non-English)
+              </h4>
+              <p className="text-gray-400 leading-relaxed text-md bg-black/20 p-5 rounded-xl border border-white/5 italic">
+                {report.report?.original_text}
+              </p>
+            </div>
+            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <ShieldAlert className="text-blue-500" size={16} /> Translated Text (English)
+            </h4>
+          </>
+        ) : (
+          <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <ShieldAlert className="text-blue-500" size={16} /> Original Text <span className="text-gray-500 text-xs ml-2 font-normal">(No translation needed)</span>
+          </h4>
+        )}
         <p className="text-gray-300 leading-relaxed text-lg bg-white/5 p-6 rounded-xl border border-white/10">
           {result.length > 0 ? result : text}
         </p>

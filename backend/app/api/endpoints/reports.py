@@ -46,10 +46,17 @@ async def create_manual_report(report_in: ReportCreate, background_tasks: Backgr
     from app.services.ingestion import generate_source_hash
     import uuid
     
+    source_hash = generate_source_hash(report_in.original_text)
+    
+    # Deduplication: If text was already processed (from CSV or Manual), return the existing report instantly!
+    existing_report = db.query(Report).filter(Report.source_hash == source_hash).first()
+    if existing_report:
+        return existing_report
+    
     report = Report(
         source=report_in.source,
         source_record_id=report_in.source_record_id or f"MANUAL-{uuid.uuid4().hex[:6]}",
-        source_hash=generate_source_hash(report_in.original_text),
+        source_hash=source_hash,
         report_type=report_in.report_type,
         original_text=report_in.original_text,
         processing_status="READY",
@@ -229,7 +236,7 @@ async def analyze_report_sync(request: Request, req: AnalyzeRequest):
         entity_engine.extract(norm_text)
     )
     
-    review_state, contradictions = decision_engine.orchestrate(sif_result, lsr_results, entity_results)
+    review_state, contradictions, updated_sif_result = decision_engine.orchestrate(sif_result, lsr_results, entity_results)
     
     return {
         "processing_path": decision.value,
@@ -238,7 +245,7 @@ async def analyze_report_sync(request: Request, req: AnalyzeRequest):
         "normalization": {
             "normalization_trace": prep_result.normalization_trace
         },
-        "sif_prediction": sif_result,
+        "sif_prediction": updated_sif_result,
         "lsr_predictions": lsr_results,
         "entities": entity_results,
         "review_state": review_state,

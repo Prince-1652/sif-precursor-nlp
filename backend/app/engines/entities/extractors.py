@@ -40,4 +40,17 @@ def extract_entities_from_text(text_lower: str) -> List[Dict[str, Any]]:
                     "status": status  # only relevant for BARRIER
                 })
                 
-    return entities
+    # Post-Processing: Aggregation / Deduplication Layer
+    # Deduplicate entities based on (entity_type, normalized_value) to prevent 
+    # the same concept from crowding the UI if mentioned multiple times in one report.
+    unique_entities = {}
+    for ent in entities:
+        key = (ent["entity_type"], ent["normalized_value"])
+        if key not in unique_entities:
+            unique_entities[key] = ent
+        else:
+            # If we find a duplicate, we could theoretically boost confidence or update offsets.
+            # For now, we simply keep the first occurrence to avoid UI clutter.
+            pass
+            
+    return list(unique_entities.values())

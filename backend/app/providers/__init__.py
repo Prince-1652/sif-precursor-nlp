@@ -36,11 +36,15 @@ def get_ai_provider() -> AIProvider:
     if provider_name == "mock":
         return MockAIProvider()
     elif provider_name == "gemini":
-        gemini = GeminiProvider()
-        if getattr(settings, "GROQ_API_KEY", None) and GroqProvider:
-            groq = GroqProvider()
-            return FallbackProvider(primary=gemini, secondary=groq)
-        return gemini
+        try:
+            gemini = GeminiProvider()
+            if getattr(settings, "GROQ_API_KEY", None) and GroqProvider:
+                groq = GroqProvider()
+                return FallbackProvider(primary=gemini, secondary=groq)
+            return gemini
+        except ValueError as e:
+            logger.warning(f"Failed to initialize Gemini: {e}. Falling back to MockAIProvider.")
+            return MockAIProvider()
     elif provider_name == "groq" and GroqProvider:
         return GroqProvider()
     else:

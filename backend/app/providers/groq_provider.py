@@ -13,7 +13,7 @@ class GroqProvider(AIProvider):
         self.api_key = api_key or getattr(settings, "GROQ_API_KEY", "")
         if not self.api_key:
             raise ValueError("GROQ_API_KEY not found in environment variables.")
-        self.model = "llama3-70b-8192"
+        self.model = "openai/gpt-oss-20b"
 
     def _load_prompt(self, version: str) -> str:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

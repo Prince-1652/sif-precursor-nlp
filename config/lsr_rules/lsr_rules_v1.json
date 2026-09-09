@@ -8,7 +8,7 @@
   {
     "rule_code": "CONFINED_SPACE",
     "positive_terms": ["confined space", "vessel entry", "tank entry", "enclosed", "manhole", "pit"],
-    "negative_contexts": ["training", "certified safe", "gas test clear", "entry permit verified"],
+    "negative_contexts": ["training", "certified safe", "gas test clear", "entry permit verified", "no worker", "no one entered", "did not enter", "no entry"],
     "danger_patterns": ["entered confined space without", "no gas test", "entered without permit", "vessel entry without"]
   },
   {
@@ -19,9 +19,9 @@
   },
   {
     "rule_code": "ENERGY_ISOLATION",
-    "positive_terms": ["loto", "lockout", "tagout", "isolation", "energized", "de-energize"],
-    "negative_contexts": ["training", "completed correctly", "verified safe", "not required"],
-    "danger_patterns": ["not isolated", "loto not applied", "energized during maintenance", "live line", "isolation not done", "without lockout"]
+    "positive_terms": ["loto", "lockout", "tagout", "isolation", "energized", "de-energize", "power off", "power supply", "electrical panel", "control panel"],
+    "negative_contexts": ["training", "completed correctly", "verified safe", "not required", "isolated"],
+    "danger_patterns": ["not isolated", "loto not applied", "energized during maintenance", "live line", "isolation not done", "without lockout", "without turning the power off", "power was on", "without power off"]
   },
   {
     "rule_code": "HOT_WORK",

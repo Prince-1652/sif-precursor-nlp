@@ -63,13 +63,23 @@ async def process_report_async(report_id: str):
         report.processing_status = "PROCESSING"
         db.commit()
 
-        # Phase 1.3: Clear old is_current flags
+        # Phase 1.3: Enforce Idempotency (Clear old records)
         from app.models.normalization import ReportNormalization
         from app.models.sif_prediction import SIFPrediction
         from app.models.lsr_prediction import LSRPrediction
+        from app.models.entity import Entity
+        from app.models.barrier import Barrier
+        from app.models.evidence import EvidenceItem
+        
+        # Soft delete versioned predictions
         db.query(ReportNormalization).filter(ReportNormalization.report_id == report_id).update({"is_current": False})
         db.query(SIFPrediction).filter(SIFPrediction.report_id == report_id).update({"is_current": False})
         db.query(LSRPrediction).filter(LSRPrediction.report_id == report_id).update({"is_current": False})
+        
+        # Hard delete unversioned child records to prevent duplication on retries
+        db.query(Entity).filter(Entity.report_id == report_id).delete()
+        db.query(Barrier).filter(Barrier.report_id == report_id).delete()
+        db.query(EvidenceItem).filter(EvidenceItem.report_id == report_id).delete()
 
         provider = get_ai_provider()
         
@@ -136,7 +146,17 @@ async def process_report_async(report_id: str):
             report.ai_used = True
             try:
                 with stage_timer(db, report.job_id, report.id, "AI_NORMALIZATION"):
-                    norm_result = await provider.normalize_text(prep_result.normalized_text)
+                    max_retries = 2
+                    norm_result = None
+                    for attempt in range(max_retries + 1):
+                        try:
+                            norm_result = await provider.normalize_text(prep_result.normalized_text)
+                            break
+                        except Exception as e:
+                            if attempt == max_retries:
+                                raise e
+                            logger.warning(f"AI normalization failed for {report_id}, retrying in 2s... ({e})")
+                            await asyncio.sleep(2)
                     
                     db.query(ReportNormalization).filter(
                         ReportNormalization.report_id == str(report.id),
@@ -165,6 +185,9 @@ async def process_report_async(report_id: str):
                 logger.error(f"Error during AI normalization for {report_id}: {e}")
                 report.processing_status = "AI_NORMALIZATION_FAILED"
                 report.ai_used = False
+                db.commit()
+                audit("PROCESSING_FAILED", {"reason": "AI_NORMALIZATION_FAILED"})
+                return False
 
         # Phase 6 & 7: Three Brains and Decision Layer
         try:
@@ -175,25 +198,32 @@ async def process_report_async(report_id: str):
                     entity_engine.extract(prep_result.normalized_text)
                 )
 
+            with stage_timer(db, report.job_id, report.id, "DECISION_LAYER"):
+                review_state, contradictions, updated_sif_result = decision_engine.orchestrate(sif_result, lsr_results, entity_results)
+                
+                if contradictions:
+                    logger.warning(f"Contradictions found for report {report_id}: {contradictions}")
+
+            with stage_timer(db, report.job_id, report.id, "SAVE_RESULTS"):
                 sif_pred = SIFPrediction(
                     report_id=report.id,
                     is_current=True,
-                    sif_potential=sif_result["sif_potential"],
-                    score=sif_result["score"],
-                    confidence=sif_result["confidence"],
-                    risk_band=sif_result["risk_band"],
-                    engine_name=sif_result["engine"],
+                    sif_potential=updated_sif_result["sif_potential"],
+                    score=updated_sif_result["score"],
+                    confidence=updated_sif_result["confidence"],
+                    risk_band=updated_sif_result["risk_band"],
+                    engine_name=updated_sif_result["engine"],
                     engine_version="1.0",
                     method="deterministic",
-                    evidence_summary=[{"text": e["text"], "weight": e["weight"]} for e in sif_result["evidence"]]
+                    evidence_summary=[{"text": e["text"], "weight": e["weight"]} for e in updated_sif_result["evidence"]]
                 )
                 db.add(sif_pred)
 
-                report.sif_potential = sif_result["sif_potential"]
-                report.sif_score = sif_result["score"]
-                report.risk_band = sif_result["risk_band"]
+                report.sif_potential = updated_sif_result["sif_potential"]
+                report.sif_score = updated_sif_result["score"]
+                report.risk_band = updated_sif_result["risk_band"]
                 
-                for e in sif_result["evidence"]:
+                for e in updated_sif_result["evidence"]:
                     db.add(EvidenceItem(
                         report_id=report.id, source_type="NORMALIZED_TEXT",
                         start_offset=e.get("start", 0), end_offset=e.get("end", 0), phrase=e["text"],
@@ -250,12 +280,6 @@ async def process_report_async(report_id: str):
                         )
                         db.add(b)
 
-            with stage_timer(db, report.job_id, report.id, "DECISION_LAYER"):
-                review_state, contradictions = decision_engine.orchestrate(sif_result, lsr_results, entity_results)
-                
-                if contradictions:
-                    logger.warning(f"Contradictions found for report {report_id}: {contradictions}")
-
                 try:
                     embedding = await provider.generate_embedding(report.original_text)
                     report.vector_embedding = embedding
@@ -269,6 +293,7 @@ async def process_report_async(report_id: str):
             
             db.commit()
             audit("PROCESSED", {"status": report.processing_status, "ai_used": report.ai_used})
+            return True
 
         except Exception as e:
             logger.error(f"Error during deterministic analysis for {report_id}: {e}")
@@ -276,6 +301,7 @@ async def process_report_async(report_id: str):
             report.processing_status = "REVIEW_REQUIRED"
             db.commit()
             audit("PROCESSING_FAILED", {"error": str(e)})
+            return False
 
     except Exception as e:
         logger.error(f"Unhandled error processing report {report_id}: {e}")
@@ -285,6 +311,7 @@ async def process_report_async(report_id: str):
             report.processing_status = "FAILED"
             db.commit()
             audit("PROCESSING_FAILED", {"error": str(e)})
+        return False
     finally:
         db.close()
 
@@ -300,16 +327,90 @@ def process_report(report_id: str):
     except RuntimeError:
         asyncio.run(process_report_async(report_id))
 
-def process_pending_reports():
+async def process_pending_reports_async():
     db: Session = SessionLocal()
+    english_ids = []
+    non_english_ids = []
     try:
         pending_reports = db.query(Report).filter(Report.processing_status == "READY").all()
-        report_ids = [str(r.id) for r in pending_reports]
+        if not pending_reports:
+            return
+            
+        from app.engines.language_gate.detector import LanguageDetector
+        from app.engines.language_gate.gate import decide_routing, LanguageGateDecision
+        detector = LanguageDetector()
+        
+        for r in pending_reports:
+            detection = detector.detect(r.original_text)
+            decision = decide_routing(detection, len(r.original_text))
+            
+            if decision == LanguageGateDecision.AI_NORMALIZATION:
+                non_english_ids.append(str(r.id))
+            else:
+                english_ids.append(str(r.id))
     finally:
         db.close()
+
+    # Process English records concurrently (fast, local execution)
+    if english_ids:
+        sem = asyncio.Semaphore(50)
+        async def process_with_sem(rid):
+            async with sem:
+                await process_report_async(rid)
         
-    for rid in report_ids:
-        try:
-            process_report(rid)
-        except Exception as e:
-            logger.error(f"Failed to process report {rid}: {e}")
+        await asyncio.gather(*(process_with_sem(rid) for rid in english_ids))
+
+    # Process Non-English records in batches with a circuit breaker
+    if non_english_ids:
+        batch_size = 5
+        continuous_failures = 0
+        breaker_tripped = False
+        
+        for i in range(0, len(non_english_ids), batch_size):
+            if breaker_tripped:
+                break
+                
+            batch = non_english_ids[i:i+batch_size]
+            results = await asyncio.gather(*(process_report_async(rid) for rid in batch), return_exceptions=True)
+            
+            # Check results to update circuit breaker
+            failed_in_batch = 0
+            for res in results:
+                if isinstance(res, Exception) or res is False:
+                    failed_in_batch += 1
+            
+            if failed_in_batch > 0:
+                continuous_failures += failed_in_batch
+            else:
+                continuous_failures = 0
+                
+            if continuous_failures >= 3:
+                breaker_tripped = True
+                logger.error("CIRCUIT BREAKER TRIPPED: 3 continuous AI failures.")
+                break
+                
+        if breaker_tripped:
+            remaining_ids = non_english_ids[i:]
+            if remaining_ids:
+                db_err: Session = SessionLocal()
+                try:
+                    db_err.query(Report).filter(Report.id.in_(remaining_ids), Report.processing_status == "READY").update({"processing_status": "DLQ"}, synchronize_session=False)
+                    db_err.commit()
+                    logger.info(f"Moved {len(remaining_ids)} reports to DLQ due to tripped circuit breaker.")
+                except Exception as e:
+                    db_err.rollback()
+                    logger.error(f"Failed to update DLQ reports: {e}")
+                finally:
+                    db_err.close()
+
+def process_pending_reports():
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                pool.submit(lambda: asyncio.run(process_pending_reports_async())).result()
+        else:
+            asyncio.run(process_pending_reports_async())
+    except RuntimeError:
+        asyncio.run(process_pending_reports_async())

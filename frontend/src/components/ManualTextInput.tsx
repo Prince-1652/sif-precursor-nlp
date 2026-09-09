@@ -50,33 +50,33 @@ export function ManualTextInput({ onUploadSuccess }: ManualTextInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white/40 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-[28px] p-8 flex flex-col mt-8">
-      <h3 className="text-lg font-bold text-slate-800 mb-4">Paste Single Report</h3>
+    <form onSubmit={handleSubmit} className="bg-white/5 border border-white/10 rounded-[28px] p-8 flex flex-col mt-8">
+      <h3 className="text-lg font-bold text-white mb-4">Paste Single Report</h3>
       
       <select 
         value={reportType}
         onChange={(e) => setReportType(e.target.value)}
-        className="mb-4 bg-white/60 backdrop-blur-md border border-white/80 rounded-xl px-4 py-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="mb-4 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm font-medium text-white outline-none focus:ring-2 focus:ring-blue-500/50"
       >
-        <option value="Incident">Incident</option>
-        <option value="Near Miss">Near Miss</option>
-        <option value="Unsafe Act">Unsafe Act</option>
-        <option value="Unsafe Condition">Unsafe Condition</option>
-        <option value="Spill">Spill</option>
-        <option value="Observation">Observation</option>
+        <option value="Incident" className="bg-gray-900 text-white">Incident</option>
+        <option value="Near Miss" className="bg-gray-900 text-white">Near Miss</option>
+        <option value="Unsafe Act" className="bg-gray-900 text-white">Unsafe Act</option>
+        <option value="Unsafe Condition" className="bg-gray-900 text-white">Unsafe Condition</option>
+        <option value="Spill" className="bg-gray-900 text-white">Spill</option>
+        <option value="Observation" className="bg-gray-900 text-white">Observation</option>
       </select>
 
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Paste your safety report here for live analysis..."
-        className="w-full h-32 p-4 bg-white/60 backdrop-blur-md border border-white/80 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 resize-none text-slate-800 placeholder:text-slate-400 font-medium mb-4"
+        className="w-full h-32 p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/50 resize-none text-white placeholder:text-gray-500 font-medium mb-4"
       />
 
       <button
         type="submit"
         disabled={status === "submitting" || !text.trim()}
-        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl transition-all shadow-md active:translate-y-0 hover:-translate-y-0.5"
+        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-white/10 disabled:to-white/10 disabled:text-white/30 text-white font-bold rounded-xl transition-all shadow-md active:translate-y-0 hover:-translate-y-0.5"
       >
         {status === "submitting" ? (
           <><Loader2 size={18} className="animate-spin" /> Processing...</>

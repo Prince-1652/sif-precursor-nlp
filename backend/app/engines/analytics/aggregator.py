@@ -28,8 +28,23 @@ def compute_summary(db: Session) -> dict:
     total_sites = db.query(Site).count()
     
     # LSR distribution
+    ALL_LSR_RULES = [
+        "BYPASSING_SAFETY_CONTROLS",
+        "CONFINED_SPACE",
+        "DRIVING",
+        "ENERGY_ISOLATION",
+        "HOT_WORK",
+        "LINE_OF_FIRE",
+        "PERMIT_TO_WORK",
+        "SAFE_MECHANICAL_LIFTING",
+        "WORKING_AT_HEIGHT"
+    ]
+    lsr_distribution = {rule: 0 for rule in ALL_LSR_RULES}
+    
     lsr_results = db.query(LifeSavingRule.rule_code, func.count(LSRPrediction.id)).join(LSRPrediction, LifeSavingRule.id == LSRPrediction.rule_id).filter(LSRPrediction.matched == True, LSRPrediction.is_current == True).group_by(LifeSavingRule.rule_code).all()
-    lsr_distribution = {row[0]: row[1] for row in lsr_results}
+    
+    for row in lsr_results:
+        lsr_distribution[row[0]] = row[1]
 
     return {
         "total_reports": total_reports,

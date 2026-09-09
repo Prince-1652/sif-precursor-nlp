@@ -96,8 +96,8 @@ export function UploadDropzone({ onUploadSuccess }: UploadDropzoneProps) {
           <div className="w-16 h-16 bg-white/60 backdrop-blur-md shadow-sm border border-white/80 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
             <UploadCloud size={28} strokeWidth={2.5} />
           </div>
-          <h3 className="text-lg font-bold text-slate-800 mb-2">Upload Safety Reports</h3>
-          <p className="text-sm text-slate-500 text-center max-w-sm font-medium">
+          <h3 className="text-lg font-bold text-white mb-2">Upload Safety Reports</h3>
+          <p className="text-sm text-gray-400 text-center max-w-sm font-medium">
             Drag and drop your CSV file here, or click to browse. AI will automatically analyze the contents.
           </p>
         </>

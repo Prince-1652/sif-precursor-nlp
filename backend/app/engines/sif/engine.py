@@ -43,7 +43,7 @@ class SIFEngine:
                 context_end = min(len(text_lower), end + 30)
                 context = text_lower[context_start:context_end]
                 
-                multiplier = get_context_multiplier(context)
+                multiplier = get_context_multiplier(context, rule.type)
                 adjusted_weight = min(1.0, rule.base_weight * multiplier)
                 
                 weights.append(adjusted_weight)
