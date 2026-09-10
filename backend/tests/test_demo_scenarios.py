@@ -9,9 +9,10 @@ from app.engines.preprocessing.pipeline import run_preprocessing
 @pytest.mark.asyncio
 async def test_demo_scenario_1_high_sif():
     # Scenario: Worker fell from height, missing fall protection
-    text = "Worker slipped on wet surface during work at height. Fall protection was missing."
+    text = "Worker slipped on wet surface during work at height. And in an unfortunate turn of events, the required fall protection was missing."
     res = await sif_engine.analyze(text)
     
+    print("DEBUG RES:", res)
     assert res["sif_potential"] is True
     concepts = [e["concept"] for e in res["evidence"]]
     assert "FALL_PROTECTION" in concepts

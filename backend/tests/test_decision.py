@@ -6,7 +6,7 @@ def test_decision_layer_valid():
     lsr_res = []
     ent_res = []
     
-    state, contradictions = decision_engine.orchestrate(sif_res, lsr_res, ent_res)
+    state, contradictions, updated_sif = decision_engine.orchestrate(sif_res, lsr_res, ent_res)
     assert len(contradictions) == 0
     assert state == "AUTO_ACCEPTED_HIGH_CONFIDENCE"
 
@@ -15,7 +15,7 @@ def test_decision_layer_invalid():
     lsr_res = []
     ent_res = []
     
-    state, contradictions = decision_engine.orchestrate(sif_res, lsr_res, ent_res)
+    state, contradictions, updated_sif = decision_engine.orchestrate(sif_res, lsr_res, ent_res)
     assert state == "REVIEW_REQUIRED"
 
 def test_decision_layer_contradiction():
@@ -24,7 +24,7 @@ def test_decision_layer_contradiction():
     # High SIF but successful barrier and no failed barrier
     ent_res = [{"entity_type": "BARRIER", "status": "SUCCESSFUL"}]
     
-    state, contradictions = decision_engine.orchestrate(sif_res, lsr_res, ent_res)
+    state, contradictions, updated_sif = decision_engine.orchestrate(sif_res, lsr_res, ent_res)
     assert len(contradictions) > 0
     assert state == "REVIEW_RECOMMENDED"
 
@@ -33,6 +33,6 @@ def test_decision_layer_low_risk():
     lsr_res = []
     ent_res = []
     
-    state, contradictions = decision_engine.orchestrate(sif_res, lsr_res, ent_res)
+    state, contradictions, updated_sif = decision_engine.orchestrate(sif_res, lsr_res, ent_res)
     assert len(contradictions) == 0
     assert state == "AUTO_ACCEPTED_LOW_RISK"

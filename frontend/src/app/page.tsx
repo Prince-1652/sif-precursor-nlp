@@ -3,25 +3,29 @@
 import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { DashboardSummary, SiteDensity, Pattern } from "@/types";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [sites, setSites] = useState<{sites: SiteDensity[]} | null>(null);
   const [patterns, setPatterns] = useState<{patterns: Pattern[]} | null>(null);
+  const [recentReports, setRecentReports] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [sumRes, sitesRes, patternsRes] = await Promise.all([
+        const [sumRes, sitesRes, patternsRes, reportsRes] = await Promise.all([
           fetch("/api/v1/dashboard/summary"),
           fetch("/api/v1/dashboard/sites"),
-          fetch("/api/v1/dashboard/patterns")
+          fetch("/api/v1/dashboard/patterns"),
+          fetch("/api/v1/reports?limit=5")
         ]);
         if (sumRes.ok) setSummary(await sumRes.json());
         if (sitesRes.ok) setSites(await sitesRes.json());
         if (patternsRes.ok) setPatterns(await patternsRes.json());
+        if (reportsRes.ok) setRecentReports(await reportsRes.json());
       } catch (e: any) {
         console.error(e);
         setError("Failed to load dashboard data. Please make sure the backend is running.");
@@ -71,11 +75,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Top Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <MetricCard title="Total Reports" value={summary.total_reports} trend={summary.volume_trend} />
-        <MetricCard title="SIF Potential" value={summary.sif_count} subtext={`${(summary.sif_percentage * 100).toFixed(1)}% of total`} color="text-red-500" trend={summary.sif_trend} />
-        <MetricCard title="High Risk" value={summary.high_risk_count} color="text-orange-500" />
-        <MetricCard title="Pending Review" value={summary.review_count} color="text-yellow-500" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <MetricCard title="Total Reports" value={summary.total_reports} trend={summary.volume_trend} href="/reports" />
+        <MetricCard title="SIF Potential" value={summary.sif_count} subtext={`${(summary.sif_percentage * 100).toFixed(1)}% of total`} color="text-red-500" trend={summary.sif_trend} href="/reports?riskFilter=SIF" />
+        <MetricCard title="Pending Review" value={summary.review_count} color="text-yellow-500" href="/reports?statusFilter=PENDING_REVIEW" />
       </div>
 
       {/* Trending Terms */}
@@ -194,13 +197,50 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Recent Reports Table */}
+      {recentReports && recentReports.length > 0 && (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 overflow-hidden">
+          <h2 className="text-xl font-semibold text-white mb-6">Recent Reports</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-gray-300">
+              <thead className="bg-white/5 text-gray-400">
+                <tr>
+                  <th className="px-4 py-3 font-medium rounded-tl-lg">ID</th>
+                  <th className="px-4 py-3 font-medium">Text Snippet</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">SIF Potential</th>
+                  <th className="px-4 py-3 font-medium rounded-tr-lg">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {recentReports.map((r: any) => (
+                  <tr key={r.id} className="hover:bg-white/[0.05] transition-colors cursor-pointer" onClick={() => window.location.href = `/reports/${r.id}`}>
+                    <td className="px-4 py-3 font-medium text-white font-mono text-xs">{r.id.substring(0, 8)}</td>
+                    <td className="px-4 py-3 truncate max-w-xs">{r.original_text.substring(0, 60)}...</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-1 bg-white/5 rounded text-xs">{r.processing_status}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {r.sif_potential ? <span className="text-red-400 font-bold">Yes</span> : <span className="text-blue-400">No</span>}
+                    </td>
+                    <td className="px-4 py-3 text-blue-500 hover:text-blue-400 font-medium">
+                      View Detail &rarr;
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function MetricCard({ title, value, subtext, color = "text-white", trend }: { title: string, value: number, subtext?: string, color?: string, trend?: string }) {
-  return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors relative overflow-hidden">
+function MetricCard({ title, value, subtext, color = "text-white", trend, href }: { title: string, value: number, subtext?: string, color?: string, trend?: string, href?: string }) {
+  const content = (
+    <div className={`bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors relative overflow-hidden h-40 flex flex-col justify-center ${href ? 'cursor-pointer hover:ring-2 hover:ring-blue-500/50' : ''}`}>
       <h3 className="text-gray-400 text-sm font-medium mb-2">{title}</h3>
       <div className={`text-4xl font-bold ${color}`}>{value}</div>
       {subtext && <p className="text-xs text-gray-500 mt-2">{subtext}</p>}
@@ -212,4 +252,9 @@ function MetricCard({ title, value, subtext, color = "text-white", trend }: { ti
       )}
     </div>
   );
+
+  if (href) {
+    return <Link href={href} className="block group h-full">{content}</Link>;
+  }
+  return content;
 }

@@ -3,13 +3,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { ShieldAlert, AlertTriangle, CheckCircle2, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 
-export default function ReportsPage() {
+function ReportsContent() {
+  const searchParams = useSearchParams();
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [riskFilter, setRiskFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("statusFilter") || "ALL");
+  const [riskFilter, setRiskFilter] = useState(searchParams.get("riskFilter") || "ALL");
   const [showFilters, setShowFilters] = useState(false);
 
   const fetchReports = useCallback(async () => {
@@ -33,7 +36,7 @@ export default function ReportsPage() {
 
   const filteredReports = reports.filter(r => {
     const matchesSearch = !searchQuery || r.original_text.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "ALL" || r.processing_status === statusFilter;
+    const matchesStatus = statusFilter === "ALL" || r.processing_status === statusFilter || (statusFilter === "PENDING_REVIEW" && ["REVIEW_REQUIRED", "REVIEW_RECOMMENDED"].includes(r.processing_status));
     const matchesRisk = riskFilter === "ALL" || (riskFilter === "SIF" ? r.sif_potential : !r.sif_potential);
     return matchesSearch && matchesStatus && matchesRisk;
   });
@@ -77,6 +80,7 @@ export default function ReportsPage() {
             >
               <option value="ALL">All Statuses</option>
               <option value="COMPLETED">Completed</option>
+              <option value="PENDING_REVIEW">Pending Review</option>
               <option value="REVIEW_REQUIRED">Review Required</option>
               <option value="REVIEW_RECOMMENDED">Review Recommended</option>
               <option value="COMPLETED_WITH_EDITS">Completed with Edits</option>
@@ -154,5 +158,13 @@ export default function ReportsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-400">Loading reports...</div>}>
+      <ReportsContent />
+    </Suspense>
   );
 }
