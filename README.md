@@ -14,13 +14,13 @@ The project features a sleek, real-time dashboard for EHS (Environment, Health, 
 
 To understand the specific layers of this platform, please refer to the detailed architecture and flow documents linked below:
 
-- **[System Architecture](file:///architecture.md):** Complete overview of the decoupled client-server architecture, highlighting the separation of Next.js and FastAPI.
-- **[Technology Stack](file:///tech_stack.md):** The full list of technologies used across the stack and the explicit justifications for choosing them over alternatives.
-- **[Application Flow](file:///flow.md):** A detailed step-by-step breakdown (with sequence diagrams) of how data moves from a user's upload all the way through the backend database.
-- **[Core Engines](file:///engines.md):** Deep dive into the 5 distinct processing engines (Language Gate, SIF Engine, LSR Engine, Entity Extraction, Decision Orchestrator).
-- **[Frontend Architecture](file:///frontend.md):** Details on the Next.js App Router setup, React components, and client-side URL filtering.
-- **[Backend Architecture](file:///backend.md):** Details on the FastAPI routing, Pydantic validation, and background task queues.
-- **[Database Schema](file:///database.md):** Overview of the PostgreSQL persistence layer, ORM mapping, and table definitions.
+- **[System Architecture](./architecture.md):** Complete overview of the decoupled client-server architecture, highlighting the separation of Next.js and FastAPI.
+- **[Technology Stack](./tech_stack.md):** The full list of technologies used across the stack and the explicit justifications for choosing them over alternatives.
+- **[Application Flow](./flow.md):** A detailed step-by-step breakdown (with sequence diagrams) of how data moves from a user's upload all the way through the backend database.
+- **[Core Engines](./engines.md):** Deep dive into the 5 distinct processing engines (Language Gate, SIF Engine, LSR Engine, Entity Extraction, Decision Orchestrator).
+- **[Frontend Architecture](./frontend.md):** Details on the Next.js App Router setup, React components, and client-side URL filtering.
+- **[Backend Architecture](./backend.md):** Details on the FastAPI routing, Pydantic validation, and background task queues.
+- **[Database Schema](./database.md):** Overview of the PostgreSQL persistence layer, ORM mapping, and table definitions.
 
 ---
 
