@@ -20,7 +20,7 @@ To understand the specific layers of this platform, please refer to the detailed
 - **[Core Engines](file:///engines.md):** Deep dive into the 5 distinct processing engines (Language Gate, SIF Engine, LSR Engine, Entity Extraction, Decision Orchestrator).
 - **[Frontend Architecture](file:///frontend.md):** Details on the Next.js App Router setup, React components, and client-side URL filtering.
 - **[Backend Architecture](file:///backend.md):** Details on the FastAPI routing, Pydantic validation, and background task queues.
-- **[Database Schema](file:///database.md):** Overview of the SQLite persistence layer, ORM mapping, and table definitions.
+- **[Database Schema](file:///database.md):** Overview of the PostgreSQL persistence layer, ORM mapping, and table definitions.
 
 ---
 

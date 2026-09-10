@@ -31,7 +31,7 @@ graph TD
 
     subgraph Data [Persistence Layer]
         ORM[SQLAlchemy]
-        DB[(SQLite Database)]
+        DB[(PostgreSQL Database)]
     end
 
     UI -->|HTTP POST/GET| Router
@@ -60,7 +60,7 @@ The application avoids relying entirely on LLMs by using a **Hybrid Pipeline**.
 - **LLM Fallback/Augmentation:** Large Language Models (Gemini/Groq) are used strictly for normalization (translating complex slang/Hinglish to standard English) and entity extraction, where deterministic rules fall short.
 
 ### 4. The Persistence Layer
-An **SQLAlchemy ORM** connects the application logic to a local **SQLite** database. This provides ACID compliance, structured schemas (Reports, Predictions, Entities), and an easy migration path to PostgreSQL in the future using Alembic.
+An **SQLAlchemy ORM** connects the application logic to a robust **PostgreSQL** database. This provides ACID compliance, high concurrency for background workers, structured schemas (Reports, Predictions, Entities), and future-proof scaling for pgvector.
 
 ## Request Lifecycle (Example: Uploading a Report)
 1. **Intake:** User uploads a text report via the React UI.

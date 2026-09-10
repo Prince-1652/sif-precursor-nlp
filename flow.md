@@ -29,7 +29,7 @@ When a report text hits the backend (e.g., `Worker slipped on wet floor near the
 ```mermaid
 sequenceDiagram
     participant API as FastAPI Router
-    participant DB as SQLite DB
+    participant DB as PostgreSQL DB
     participant Prep as Preprocessor
     participant Gate as Language Gate
     participant LLM as AI Provider
