@@ -34,9 +34,10 @@ The FastAPI backend exposes the following primary REST endpoints:
   - **Behavior:** Validates file size, saves to SQLite, and instantly spins off an async `BackgroundTasks` queue to process rows without blocking the client.
 - **`POST /api/v1/reports/manual`**
   - **Description:** Submit a single safety report as a JSON payload.
-  - **Behavior:** Hashes the text for deduplication. If new, it creates a `READY` record and triggers background processing.
+  - **Behavior:** Hashes the text for deduplication. Auto-generates a `source_record_id` if missing, saves it to the database, and triggers background processing.
 - **`POST /api/v1/reports/analyze`**
-  - **Description:** Synchronous testing endpoint. Runs text through the entire pipeline (Language Gate -> Engines -> Decision) and returns raw JSON without saving to the database.
+  - **Description:** Synchronous testing endpoint (Sandbox). 
+  - **Behavior:** Runs text through the entire pipeline (Language Gate -> Engines -> Decision) and returns raw JSON without saving to the database. Intentionally ignores database-level metadata like dates or IDs to keep testing pure.
 
 ### Dashboard & Analytics
 - **`GET /api/v1/analytics/dashboard`**

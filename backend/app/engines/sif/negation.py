@@ -1,7 +1,4 @@
-import re
-
-NEGATION_WORDS = {"not", "no", "without", "failed", "missing", "bypassed", "absent"}
-POSITIVE_WORDS = {"completed", "verified", "confirmed", "correctly", "properly"}
+from app.engines.nlp_utils import detect_status
 
 def get_context_multiplier(phrase_context: str, rule_type: str = "BARRIER") -> float:
     """
@@ -10,16 +7,13 @@ def get_context_multiplier(phrase_context: str, rule_type: str = "BARRIER") -> f
     If negative context around a barrier -> it failed (weight increases).
     If negative context around a hazard -> it wasn't present (weight reduces).
     """
-    words = set(re.findall(r'\b\w+\b', phrase_context.lower()))
-    
-    has_negation = bool(words.intersection(NEGATION_WORDS))
-    has_positive = bool(words.intersection(POSITIVE_WORDS))
+    status = detect_status(phrase_context)
     
     if rule_type == "BARRIER":
-        if has_negation: return 1.5
-        if has_positive: return 0.2
+        if status == "FAILED": return 1.5
+        if status == "SUCCESSFUL": return 0.2
     else:
         # HAZARD, OUTCOME, ACTIVITY
-        if has_negation: return 0.2
+        if status == "FAILED": return 0.2
         
     return 1.0

@@ -36,6 +36,11 @@ When a report is clicked, the user enters the drill-down view.
 - **Split View:** The screen is divided. The left side displays the raw, unaltered text entered by the field worker. The right side displays the AI's deductions: exact text snippets that triggered SIF rules, extracted entities (People, Hazards), and the Final Risk Score.
 - **Action Buttons:** At the bottom, the user can override the AI by clicking "Confirm", "Reject", or "Edit", which POSTs back to the backend and updates the `processing_status`.
 
+### 4. Live Analysis Sandbox (`/analyze/page.tsx`)
+A testing ground to observe the pipeline in real-time.
+- **Pure Sandbox:** Metadata inputs (like Source ID or Date) are intentionally stripped from the UI to focus strictly on text extraction algorithms.
+- **Auto-Retry Resilience:** Includes an intelligent `fetch` retry loop. If the backend is actively reloading due to a code change (triggering a Next.js `500 ECONNREFUSED` proxy error), the frontend waits and auto-retries, preventing crash screens during rapid development.
+
 ## Error Boundaries
 To ensure the app never crashes to a blank white screen (a common issue in SPAs), robust Next.js error boundaries are implemented.
 - `error.tsx` catches runtime rendering errors within specific route segments and displays a localized "Something went wrong" UI with a `reset()` button.

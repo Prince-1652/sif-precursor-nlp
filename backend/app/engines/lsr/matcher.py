@@ -1,6 +1,7 @@
 import re
 from typing import List
 from app.engines.lsr.rule_loader import LSRRuleDef
+from app.engines.nlp_utils import get_token_context
 
 class LSRMatcher:
     def __init__(self, rules: List[LSRRuleDef]):
@@ -19,9 +20,7 @@ class LSRMatcher:
             for pattern in rule.danger_patterns:
                 for match in re.finditer(r'\b' + re.escape(pattern) + r'\b', text_lower):
                     # verify it's not in a negative context (local window only)
-                    ctx_start = max(0, match.start() - 50)
-                    ctx_end = min(len(text_lower), match.end() + 50)
-                    local_context = text_lower[ctx_start:ctx_end]
+                    local_context = get_token_context(text_lower, match.start(), match.end(), window_size=10)
                     context_safe = True
                     for neg in rule.negative_contexts:
                         if re.search(r'\b' + re.escape(neg) + r'\b', local_context):
@@ -41,9 +40,7 @@ class LSRMatcher:
             for term in rule.positive_terms:
                 for match in re.finditer(r'\b' + re.escape(term) + r'\b', text_lower):
                     # verify it's not in a negative context (local window only)
-                    ctx_start = max(0, match.start() - 50)
-                    ctx_end = min(len(text_lower), match.end() + 50)
-                    local_context = text_lower[ctx_start:ctx_end]
+                    local_context = get_token_context(text_lower, match.start(), match.end(), window_size=10)
                     context_safe = True
                     for neg in rule.negative_contexts:
                         if re.search(r'\b' + re.escape(neg) + r'\b', local_context):

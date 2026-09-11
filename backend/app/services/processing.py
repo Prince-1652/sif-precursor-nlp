@@ -193,8 +193,8 @@ async def process_report_async(report_id: str):
         try:
             with stage_timer(db, report.job_id, report.id, "CORE_ENGINES"):
                 sif_result, lsr_results, entity_results = await asyncio.gather(
-                    sif_engine.analyze(prep_result.normalized_text),
-                    lsr_engine.analyze(prep_result.normalized_text),
+                    sif_engine.analyze(prep_result.normalized_text, report.report_type),
+                    lsr_engine.analyze(prep_result.normalized_text, report.report_type),
                     entity_engine.extract(prep_result.normalized_text)
                 )
 
@@ -373,19 +373,31 @@ async def process_pending_reports_async():
             batch = non_english_ids[i:i+batch_size]
             results = await asyncio.gather(*(process_report_async(rid) for rid in batch), return_exceptions=True)
             
-            # Check results to update circuit breaker
-            failed_in_batch = 0
-            for res in results:
-                if isinstance(res, Exception) or res is False:
-                    failed_in_batch += 1
+            failed_in_this_batch_ids = []
             
-            if failed_in_batch > 0:
-                continuous_failures += failed_in_batch
-            else:
-                continuous_failures = 0
-                
-            if continuous_failures >= 3:
-                breaker_tripped = True
+            # Check results to update circuit breaker sequentially
+            for rid, res in zip(batch, results):
+                if isinstance(res, Exception) or res is False:
+                    continuous_failures += 1
+                    failed_in_this_batch_ids.append(rid)
+                    if continuous_failures >= 3:
+                        breaker_tripped = True
+                else:
+                    continuous_failures = 0
+            
+            # Send all failed reports in this batch to DLQ
+            if failed_in_this_batch_ids:
+                db_fail: Session = SessionLocal()
+                try:
+                    db_fail.query(Report).filter(Report.id.in_(failed_in_this_batch_ids)).update({"processing_status": "DLQ"}, synchronize_session=False)
+                    db_fail.commit()
+                except Exception as e:
+                    db_fail.rollback()
+                    logger.error(f"Failed to move failed batch reports to DLQ: {e}")
+                finally:
+                    db_fail.close()
+                    
+            if breaker_tripped:
                 logger.error("CIRCUIT BREAKER TRIPPED: 3 continuous AI failures.")
                 break
                 

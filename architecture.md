@@ -56,7 +56,8 @@ Powered by **FastAPI**, the backend acts as the orchestrator. It handles incomin
 
 ### 3. The Core Engines (Hybrid Pipeline)
 The application avoids relying entirely on LLMs by using a **Hybrid Pipeline**.
-- **Deterministic Rules:** Fast, reliable rules engines are used first (FastText for language detection, Regex for preprocessing, JSON-based weighting for hazard classification).
+- **Deterministic Rules & Token-Awareness:** Fast, reliable rules engines are used first. The system utilizes `nlp_utils.py` for token-aware context extraction, ensuring word boundaries are respected.
+- **Dynamic Metadata Routing:** The report's metadata (e.g., `report_type`) is piped directly into the engines to intelligently apply risk multipliers (e.g., 1.3x for Incidents) and bypass irrelevant rules (e.g., skipping driving checks for spills).
 - **LLM Fallback/Augmentation:** Large Language Models (Gemini/Groq) are used strictly for normalization (translating complex slang/Hinglish to standard English) and entity extraction, where deterministic rules fall short.
 
 ### 4. The Persistence Layer

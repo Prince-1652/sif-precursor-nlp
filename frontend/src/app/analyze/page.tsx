@@ -19,23 +19,40 @@ export default function AnalyzePage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/v1/reports/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          original_text: text,
-          report_type: reportType,
-          site_id: undefined,
-          source_record_id: sourceId || undefined,
-          reported_at: reportDate ? new Date(reportDate).toISOString() : undefined
-        })
-      });
+      let res: Response | null = null;
+      let attempt = 0;
+      
+      // Auto-retry up to 3 times for 500/502 errors to handle Uvicorn --reload downtime
+      while (attempt < 3) {
+        res = await fetch("/api/v1/reports/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            original_text: text,
+            report_type: reportType,
+            site_id: undefined,
+            source_record_id: sourceId || undefined,
+            reported_at: reportDate ? new Date(reportDate).toISOString() : undefined
+          })
+        });
+        
+        if (res.ok || res.status < 500) break;
+        
+        // Wait 1 second before retrying to let the backend finish restarting
+        await new Promise(r => setTimeout(r, 1000));
+        attempt++;
+      }
+      
+      if (!res) throw new Error("Network error occurred");
       if (res.ok) {
         setResult(await res.json());
       } else {
         const errorData = await res.json().catch(() => null);
         let errorMsg = "Analysis failed due to a server error.";
-        if (errorData?.detail) {
+        
+        if (res.status >= 500) {
+          errorMsg = "Backend server is down or restarting due to a code change. Wait a few seconds and try again, or check your terminal for syntax errors.";
+        } else if (errorData?.detail) {
           if (Array.isArray(errorData.detail)) {
             errorMsg = errorData.detail.map((e: any) => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
           } else if (typeof errorData.detail === 'string') {
@@ -63,46 +80,7 @@ export default function AnalyzePage() {
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className="block text-xs text-gray-400 font-medium uppercase mb-1">Report Type</label>
-            <select 
-              value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            >
-              <option value="INCIDENT">Incident</option>
-              <option value="OBSERVATION">Observation</option>
-              <option value="NEAR_MISS">Near Miss</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-gray-400 font-medium uppercase mb-1">Source ID</label>
-            <input 
-              type="text"
-              value={sourceId}
-              onChange={(e) => setSourceId(e.target.value)}
-              placeholder="e.g. INC-10293"
-              className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-400 font-medium uppercase mb-1">Date</label>
-            <input 
-              type="date"
-              value={reportDate}
-              onChange={(e) => setReportDate(e.target.value)}
-              onClick={(e) => {
-                try {
-                  e.currentTarget.showPicker();
-                } catch (err) {
-                  // Ignore if unsupported or already open
-                }
-              }}
-              className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-            />
-          </div>
-        </div>
+        {/* Unused metadata fields removed for clarity */}
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}

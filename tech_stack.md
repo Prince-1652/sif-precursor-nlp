@@ -29,6 +29,9 @@ The SIF Precursor system is built using an aggressive, modern tech stack designe
 ### Database ORM: SQLAlchemy & Alembic
 - **Why chosen:** SQLAlchemy is the standard for robust, Pythonic database interactions. Alembic provides migration management. This combination was chosen so that the database structure is defined in code (`app/models/`), allowing developers to interact with Python objects instead of raw SQL strings.
 
+### Testing: Pytest & Pytest-Asyncio
+- **Why chosen:** Essential for stress-testing complex NLP extraction boundaries and verifying dynamic metadata weights using TDD (Test-Driven Development) methodologies. Pytest's fixture system makes mocking LLM dependencies effortless.
+
 ---
 
 ## Artificial Intelligence & NLP

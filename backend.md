@@ -14,6 +14,7 @@ backend/
 │   │   ├── config.py          # Environment variables and Pydantic BaseSettings
 │   │   └── security.py        # Rate limiting and CORS configurations
 │   ├── engines/               # The AI and Deterministic logic (SIF, LSR, etc.)
+│   │   ├── nlp_utils.py       # Token-aware context extraction and status detection
 │   ├── models/                # SQLAlchemy database schema definitions
 │   ├── schemas/               # Pydantic validation models for HTTP requests
 │   └── services/              # Orchestration logic linking endpoints to engines
@@ -48,3 +49,5 @@ This abstracts away the underlying SQL dialect, meaning the entire system could 
 The backend is fortified by a comprehensive `pytest` suite located in the `tests/` directory.
 - Tests mock the external LLM calls (using `unittest.mock.patch`), ensuring that the test suite runs in under 1 second, costs $0, and does not fail if the internet disconnects.
 - Features like `pytest-asyncio` are used to test the asynchronous pipeline functions effectively.
+- Brutal stress testing (`test_engines_stress.py`) evaluates huge payloads and word-boundary logic.
+- Test-driven verification (`test_metadata_impact.py`) ensures that dynamic metadata multipliers execute correctly.

@@ -1,6 +1,7 @@
 import re
 from typing import List, Dict, Any
 from app.engines.entities.dictionaries import DICTIONARIES
+from app.engines.nlp_utils import get_token_context, detect_status
 
 def extract_entities_from_text(text_lower: str) -> List[Dict[str, Any]]:
     entities = []
@@ -13,11 +14,8 @@ def extract_entities_from_text(text_lower: str) -> List[Dict[str, Any]]:
                 status = "UNKNOWN"
                 if entity_type == "BARRIER":
                     start, end = match.start(), match.end()
-                    context = text_lower[max(0, start-20):min(len(text_lower), end+20)]
-                    if any(w in context for w in ["failed", "not", "without", "no", "missing", "bypassed"]):
-                        status = "FAILED"
-                    elif any(w in context for w in ["completed", "verified", "used"]):
-                        status = "SUCCESSFUL"
+                    context = get_token_context(text_lower, start, end, window_size=10)
+                    status = detect_status(context)
                         
                 # Calculate confidence based on context clarity
                 confidence = 0.8  # Base confidence for dictionary match
@@ -47,10 +45,12 @@ def extract_entities_from_text(text_lower: str) -> List[Dict[str, Any]]:
     for ent in entities:
         key = (ent["entity_type"], ent["normalized_value"])
         if key not in unique_entities:
+            ent["occurrences"] = [{"start": ent["source_start"], "end": ent["source_end"]}]
             unique_entities[key] = ent
         else:
-            # If we find a duplicate, we could theoretically boost confidence or update offsets.
-            # For now, we simply keep the first occurrence to avoid UI clutter.
-            pass
+            unique_entities[key]["occurrences"].append({
+                "start": ent["source_start"], 
+                "end": ent["source_end"]
+            })
             
     return list(unique_entities.values())

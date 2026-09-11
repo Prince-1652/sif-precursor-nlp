@@ -5,10 +5,10 @@ This document details the complete end-to-end flow of data through the SIF Precu
 ## 1. User & Frontend Flow
 
 ### A. Report Ingestion
-1. **Manual Entry:** The user navigates to the upload page and types or pastes a raw safety observation into the text area.
-2. **Bulk CSV Upload:** Alternatively, the user uploads a CSV file containing hundreds of historical observations.
-3. **Frontend Action:** The Next.js client intercepts the submission, packages it into a JSON payload (or multipart form data), and POSTs it to the FastAPI backend.
-4. **Immediate Feedback:** The backend immediately acknowledges receipt (`202 Accepted`) and the UI displays a "Processing in background..." notification.
+1. **Live Analysis Sandbox (`/analyze`):** The user tests reports synchronously. This is a pure sandbox; it strips out metadata overhead and doesn't write to the database.
+2. **Manual Entry (`/ingestion`):** The user submits an official report. The backend auto-generates a `source_record_id` if missing, saves it to the database, and begins processing.
+3. **Bulk CSV Upload:** The user uploads a CSV file containing hundreds of historical observations.
+4. **Immediate Feedback:** For official ingestions, the backend acknowledges receipt (`202 Accepted`) and the UI displays a processing notification while background workers spin up.
 
 ### B. Dashboard Monitoring
 1. **Metric Cards:** The user opens the Dashboard (`/`). The UI fetches `/api/v1/analytics/dashboard`.

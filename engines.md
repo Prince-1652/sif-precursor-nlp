@@ -11,16 +11,18 @@ Before any heavy lifting occurs, the text is cleaned.
 ## 2. SIF Engine (Serious Injury & Fatality)
 This is a purely deterministic engine, built for speed and absolute traceability.
 - **How it works:** It scans the normalized text against a JSON configuration (`config/sif_rules/sif_rules_v1.json`). It looks for specific Hazards (e.g., "energized equipment"), Activities (e.g., "work at height"), and Barriers (e.g., "fall protection").
-- **Context Multipliers:** It doesn't just do blind keyword matching. It uses a context window algorithm (looking at words 30 characters before/after the keyword). If it spots negation words like "missing", "bypassed", or "failed" next to "fall protection", it aggressively multiplies the severity weight of the barrier failure.
-- **Output:** An aggregated score (0.0 to 1.0). If `>= 0.8`, the report is flagged with a `HIGH` Risk Band.
+- **Token-Aware Context & Multipliers:** It utilizes a token-aware context extraction algorithm via `nlp_utils.py` (extracting exact surrounding words rather than blind character slicing to prevent truncation). If it spots negation words next to barriers, it aggregates the severity. It also applies dynamic risk multipliers based on the report metadata (e.g. `Incident` = 1.3x, `Observation` = 0.5x).
+- **Output:** An aggregated score (0.0 to 1.0). If `>= 0.75`, the report is flagged with a `HIGH` Risk Band.
 
 ## 3. LSR Engine (Life Saving Rules)
 This engine categorizes the observation against the 9 standard Life Saving Rules (e.g., Confined Space, Line of Fire, Energy Isolation).
-- **How it works:** Similar to the SIF engine, it uses NLP pattern matching to map specific vocabulary used in the report to a standardized corporate safety taxonomy. 
+- **How it works:** Similar to the SIF engine, it uses NLP pattern matching to map vocabulary.
+- **Context-Aware Exclusions:** The engine intelligently bypasses irrelevant rules based on the report type (e.g., skipping `DRIVING` or `SAFE_MECHANICAL_LIFTING` rule checks if the report is classified as a `Spill`), radically reducing false positives.
 
 ## 4. Entity Extraction Engine
 This engine leverages the reasoning capabilities of the LLM provider (Google Gemini or Groq).
 - **How it works:** It prompts the LLM to act as a strict data extractor, asking it to pull out specific nouns from the text and categorize them into `PERSON`, `EQUIPMENT`, `LOCATION`, and `HAZARD`. 
+- **Deduplication:** Extracted entities are deduplicated by consolidating their source offsets into an `occurrences` array, preserving all data locations without cluttering the UI.
 - **Output Validation:** The LLM is forced to return strict JSON, which the backend then validates to ensure it perfectly matches the expected entity structure.
 
 ## 5. Decision Orchestrator

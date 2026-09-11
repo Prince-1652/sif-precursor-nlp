@@ -231,8 +231,8 @@ async def analyze_report_sync(request: Request, req: AnalyzeRequest):
         norm_text = norm_res.normalized_text
         
     sif_result, lsr_results, entity_results = await asyncio.gather(
-        sif_engine.analyze(norm_text),
-        lsr_engine.analyze(norm_text),
+        sif_engine.analyze(norm_text, req.report_type),
+        lsr_engine.analyze(norm_text, req.report_type),
         entity_engine.extract(norm_text)
     )
     

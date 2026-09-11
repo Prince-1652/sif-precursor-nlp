@@ -14,8 +14,8 @@ The schema is highly relational, utilizing One-to-Many relationships to map a si
 
 ### 1. `reports` Table
 The central hub for all data.
-- **Fields:** `id`, `original_text`, `normalized_text`, `processing_status`, `sif_potential`, `risk_band`.
-- **Purpose:** Stores the core observation data and the final, aggregated status after the pipeline completes.
+- **Fields:** `id`, `original_text`, `normalized_text`, `report_type`, `processing_status`, `sif_potential`, `risk_band`.
+- **Purpose:** Stores the core observation data. The `report_type` field explicitly drives the NLP engines, dynamically scaling Risk Bands and applying Life-Saving Rule exclusions based on context before generating the final aggregated status.
 
 ### 2. `sif_predictions` Table
 - **Fields:** `id`, `report_id`, `score`, `risk_band`, `is_current`.
