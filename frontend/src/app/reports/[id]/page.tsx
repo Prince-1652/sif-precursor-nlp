@@ -62,46 +62,41 @@ export default function ReportDetailPage() {
   // A helper to highlight text based on evidence items
   const renderHighlightedText = () => {
     const text = report.report?.normalized_text || report.report?.original_text || "";
-    if (!report.evidence || report.evidence.length === 0) {
-      return (
-        <p className="text-gray-300 leading-relaxed text-lg bg-white/5 p-6 rounded-xl border border-white/10">
-          {text}
-        </p>
-      );
-    }
+    let result: React.ReactNode[] = [];
 
-    // Handle overlapping offsets by sorting and merging
-    let intervals = report.evidence.map((ev: any) => [ev.start_offset, ev.end_offset]);
-    intervals.sort((a: any, b: any) => a[0] - b[0]);
-    let merged = [];
-    if (intervals.length > 0) {
-      let current = intervals[0];
-      for (let i = 1; i < intervals.length; i++) {
-        if (intervals[i][0] <= current[1]) {
-          current[1] = Math.max(current[1], intervals[i][1]);
-        } else {
-          merged.push(current);
-          current = intervals[i];
+    if (report.evidence && report.evidence.length > 0) {
+      // Handle overlapping offsets by sorting and merging
+      let intervals = report.evidence.map((ev: any) => [ev.start_offset, ev.end_offset]);
+      intervals.sort((a: any, b: any) => a[0] - b[0]);
+      let merged = [];
+      if (intervals.length > 0) {
+        let current = intervals[0];
+        for (let i = 1; i < intervals.length; i++) {
+          if (intervals[i][0] <= current[1]) {
+            current[1] = Math.max(current[1], intervals[i][1]);
+          } else {
+            merged.push(current);
+            current = intervals[i];
+          }
         }
+        merged.push(current);
       }
-      merged.push(current);
-    }
 
-    let result = [];
-    let lastIndex = 0;
-    merged.forEach(([start, end], idx) => {
-      if (start > lastIndex) {
-        result.push(<span key={`t-${idx}`}>{text.substring(lastIndex, start)}</span>);
+      let lastIndex = 0;
+      merged.forEach(([start, end], idx) => {
+        if (start > lastIndex) {
+          result.push(<span key={`t-${idx}`}>{text.substring(lastIndex, start)}</span>);
+        }
+        result.push(
+          <span key={`h-${idx}`} className="bg-blue-500/30 text-blue-100 font-medium px-1 rounded">
+            {text.substring(start, end)}
+          </span>
+        );
+        lastIndex = end;
+      });
+      if (lastIndex < text.length) {
+        result.push(<span key={`end`}>{text.substring(lastIndex)}</span>);
       }
-      result.push(
-        <span key={`h-${idx}`} className="bg-blue-500/30 text-blue-100 font-medium px-1 rounded">
-          {text.substring(start, end)}
-        </span>
-      );
-      lastIndex = end;
-    });
-    if (lastIndex < text.length) {
-      result.push(<span key={`end`}>{text.substring(lastIndex)}</span>);
     }
 
     return (
@@ -130,22 +125,24 @@ export default function ReportDetailPage() {
           {result.length > 0 ? result : text}
         </p>
         
-        <div className="mt-4">
-          <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Evidence Highlights</h4>
-          <div className="space-y-2">
-            {report.evidence.map((ev: any, idx: number) => (
-              <div key={idx} className="bg-blue-500/10 border border-blue-500/20 text-blue-300 p-3 rounded-lg text-sm flex gap-3">
-                <span className="font-mono text-blue-500 bg-blue-500/20 px-2 py-0.5 rounded text-xs shrink-0">
-                  {ev.start_offset}:{ev.end_offset}
-                </span>
-                <div>
-                  <strong className="text-white block mb-1">"{ev.phrase}"</strong>
-                  <span className="text-blue-400/80">Matched Concept: {ev.concept}</span>
+        {report.evidence && report.evidence.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Evidence Highlights</h4>
+            <div className="space-y-2">
+              {report.evidence.map((ev: any, idx: number) => (
+                <div key={idx} className="bg-blue-500/10 border border-blue-500/20 text-blue-300 p-3 rounded-lg text-sm flex gap-3">
+                  <span className="font-mono text-blue-500 bg-blue-500/20 px-2 py-0.5 rounded text-xs shrink-0">
+                    {ev.start_offset}:{ev.end_offset}
+                  </span>
+                  <div>
+                    <strong className="text-white block mb-1">"{ev.phrase}"</strong>
+                    <span className="text-blue-400/80">Matched Concept: {ev.concept}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   };
