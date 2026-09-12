@@ -49,8 +49,8 @@ class SIFEngine:
         text_lower = normalized_text.lower()
         
         for rule in self.rules:
-            # simple keyword pattern matching
-            pattern = r'\b' + re.escape(rule.text_pattern) + r'\b'
+            # Regex pattern matching (allows complex patterns in dictionary)
+            pattern = r'\b(?:' + rule.text_pattern + r')\b'
             matches = list(re.finditer(pattern, text_lower))
             
             for match in matches:

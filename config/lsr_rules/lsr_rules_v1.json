@@ -1,7 +1,7 @@
 [
   {
     "rule_code": "BYPASSING_SAFETY_CONTROLS",
-    "positive_terms": ["bypass", "override", "disable", "interlock", "safety system", "alarm", "safety control"],
+    "positive_terms": ["bypass(?:ed|ing)?", "override", "overrid(?:ing|den)?", "disable(?:d|s)?", "interlock", "safety system", "alarm", "safety control"],
     "negative_contexts": ["training", "restored", "reactivated", "test complete"],
     "danger_patterns": ["bypassed interlock", "disabled alarm", "overrode safety", "safety system defeated", "bypassed safety control"]
   },
@@ -13,43 +13,43 @@
   },
   {
     "rule_code": "DRIVING",
-    "positive_terms": ["driving", "vehicle", "truck", "speeding", "seatbelt", "mobile phone", "distracted"],
+    "positive_terms": ["driv(?:ing|e|en)", "vehicle(?:s)?", "truck(?:s)?", "speeding", "seatbelt(?:s)?", "mobile phone", "distracted"],
     "negative_contexts": ["training", "parked", "stationary", "compliant"],
     "danger_patterns": ["speeding", "no seatbelt", "using phone while driving", "distracted driving", "reckless driving"]
   },
   {
     "rule_code": "ENERGY_ISOLATION",
-    "positive_terms": ["loto", "lockout", "tagout", "isolation", "energized", "de-energize", "power off", "power supply", "electrical panel", "control panel"],
+    "positive_terms": ["loto", "lockout", "tagout", "isolation", "energized", "de-energize(?:d)?", "power off", "power supply", "electrical panel", "control panel"],
     "negative_contexts": ["training", "completed correctly", "verified safe", "not required", "isolated"],
     "danger_patterns": ["not isolated", "loto not applied", "energized during maintenance", "live line", "isolation not done", "without lockout", "without turning the power off", "power was on", "without power off"]
   },
   {
     "rule_code": "HOT_WORK",
-    "positive_terms": ["hot work", "welding", "cutting", "grinding", "spark", "flame", "torch", "brazing"],
+    "positive_terms": ["hot work", "weld(?:ing|er|ed)?", "cutting", "grinding", "spark(?:s)?", "flame(?:s)?", "torch", "brazing"],
     "negative_contexts": ["training", "fire watch posted", "area cleared", "permit in place"],
     "danger_patterns": ["hot work without permit", "welding near flammable", "no fire watch", "sparks near combustible", "hot work permit expired"]
   },
   {
     "rule_code": "LINE_OF_FIRE",
-    "positive_terms": ["line of fire", "struck by", "caught between", "pinch point", "suspended load", "falling object", "crush"],
+    "positive_terms": ["line of fire", "struck(?: by)?", "caught between", "pinch point", "suspended load", "falling object", "crush(?:ed|ing)?"],
     "negative_contexts": ["training", "barricaded", "exclusion zone established", "area cleared"],
     "danger_patterns": ["under suspended load", "entered line of fire", "no exclusion zone", "struck by falling", "caught between"]
   },
   {
     "rule_code": "SAFE_MECHANICAL_LIFTING",
-    "positive_terms": ["crane", "lifting", "rigging", "sling", "hoist", "load", "derrick"],
+    "positive_terms": ["crane(?:s)?", "lift(?:ing|ed|s)?", "rigging", "sling(?:s)?", "hoist", "load", "derrick"],
     "negative_contexts": ["training", "inspected", "load chart verified", "lift plan approved"],
     "danger_patterns": ["overloaded crane", "no lift plan", "defective sling", "person under load", "exceeded load chart", "rigging not inspected"]
   },
   {
     "rule_code": "WORKING_AT_HEIGHT",
-    "positive_terms": ["height", "fall protection", "harness", "scaffold", "roof", "ladder", "guardrail", "elevated"],
+    "positive_terms": ["height(?:s)?", "fall protection", "harness", "scaffold(?:ing)?", "roof", "ladder", "guardrail", "elevated", "fall(?:ing|en|s)?"],
     "negative_contexts": ["training", "inspected", "ground level", "100% tied off", "harness inspected"],
     "danger_patterns": ["no harness", "not tied off", "open edge", "scaffold incomplete", "working without fall protection", "no guardrail"]
   },
   {
     "rule_code": "PERMIT_TO_WORK",
-    "positive_terms": ["permit", "ptw", "work permit", "authorization", "permit to work"],
+    "positive_terms": ["permit(?:s)?", "ptw", "work permit", "authorization", "permit to work"],
     "negative_contexts": ["training", "permit verified", "permit closed out", "compliant"],
     "danger_patterns": ["without permit", "no permit", "expired permit", "permit not obtained", "started work before permit"]
   }

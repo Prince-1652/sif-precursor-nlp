@@ -2,7 +2,7 @@
   {"text_pattern": "energized equipment", "concept": "ENERGIZED_EQUIPMENT", "type": "HAZARD", "base_weight": 0.95},
   {"text_pattern": "confined space", "concept": "CONFINED_SPACE", "type": "HAZARD", "base_weight": 0.95},
   {"text_pattern": "suspended load", "concept": "SUSPENDED_LOAD", "type": "HAZARD", "base_weight": 0.95},
-  {"text_pattern": "work at height", "concept": "WORK_AT_HEIGHT", "type": "ACTIVITY", "base_weight": 0.8},
+  {"text_pattern": "work(?:ing)? at height", "concept": "WORK_AT_HEIGHT", "type": "ACTIVITY", "base_weight": 0.8},
   {"text_pattern": "bypassed safety control", "concept": "BYPASSED_CONTROL", "type": "BARRIER_FAILURE", "base_weight": 0.95},
   {"text_pattern": "fall protection", "concept": "FALL_PROTECTION", "type": "BARRIER", "base_weight": 0.5},
   {"text_pattern": "lockout tagout", "concept": "LOTO", "type": "BARRIER", "base_weight": 0.95},
@@ -11,10 +11,10 @@
   {"text_pattern": "control panel", "concept": "ENERGIZED_EQUIPMENT", "type": "HAZARD", "base_weight": 0.85},
   {"text_pattern": "electrical panel", "concept": "ENERGIZED_EQUIPMENT", "type": "HAZARD", "base_weight": 0.9},
   {"text_pattern": "live wire", "concept": "ENERGIZED_EQUIPMENT", "type": "HAZARD", "base_weight": 1.0},
-  {"text_pattern": "crushed", "concept": "CRUSH_HAZARD", "type": "OUTCOME", "base_weight": 0.9},
-  {"text_pattern": "amputation", "concept": "AMPUTATION", "type": "OUTCOME", "base_weight": 1.0},
-  {"text_pattern": "fatality", "concept": "FATALITY", "type": "OUTCOME", "base_weight": 1.0},
-  {"text_pattern": "explosion", "concept": "EXPLOSION", "type": "HAZARD", "base_weight": 0.95},
+  {"text_pattern": "crush(?:ed|ing)?", "concept": "CRUSH_HAZARD", "type": "OUTCOME", "base_weight": 0.9},
+  {"text_pattern": "amputat(?:ion|ed)?", "concept": "AMPUTATION", "type": "OUTCOME", "base_weight": 1.0},
+  {"text_pattern": "fatal(?:ity)?", "concept": "FATALITY", "type": "OUTCOME", "base_weight": 1.0},
+  {"text_pattern": "explo(?:sion|ded)", "concept": "EXPLOSION", "type": "HAZARD", "base_weight": 0.95},
   {"text_pattern": "fire", "concept": "FIRE", "type": "HAZARD", "base_weight": 0.7},
   {"text_pattern": "arc flash", "concept": "ARC_FLASH", "type": "HAZARD", "base_weight": 0.95},
   {"text_pattern": "trench collapse", "concept": "EXCAVATION_HAZARD", "type": "HAZARD", "base_weight": 0.95},
@@ -22,5 +22,27 @@
   {"text_pattern": "inside the machinery", "concept": "POINT_OF_OPERATION_HAZARD", "type": "HAZARD", "base_weight": 0.95},
   {"text_pattern": "not secured", "concept": "UNSECURED_ENERGY", "type": "BARRIER_FAILURE", "base_weight": 0.8},
   {"text_pattern": "without applying a lock", "concept": "BYPASSED_LOTO", "type": "BARRIER_FAILURE", "base_weight": 0.95},
-  {"text_pattern": "almost turned", "concept": "NEAR_MISS", "type": "ACTIVITY", "base_weight": 0.6}
+  {"text_pattern": "almost turned", "concept": "NEAR_MISS", "type": "ACTIVITY", "base_weight": 0.6},
+  
+  {"text_pattern": "fall(?:s|ing|en)?(?: down)?", "concept": "FALL_FROM_HEIGHT", "type": "OUTCOME", "base_weight": 0.95},
+  {"text_pattern": "fell(?: down)?", "concept": "FALL_FROM_HEIGHT", "type": "OUTCOME", "base_weight": 0.95},
+  {"text_pattern": "slip(?:ped|s)? from height", "concept": "FALL_FROM_HEIGHT", "type": "OUTCOME", "base_weight": 0.95},
+  
+  {"text_pattern": "drop(?:s|ped|ping)?", "concept": "DROPPED_OBJECT", "type": "HAZARD", "base_weight": 0.85},
+  {"text_pattern": "falling object", "concept": "DROPPED_OBJECT", "type": "HAZARD", "base_weight": 0.9},
+  
+  {"text_pattern": "struck(?: by)?", "concept": "STRUCK_BY", "type": "OUTCOME", "base_weight": 0.85},
+  {"text_pattern": "caught between", "concept": "CAUGHT_BETWEEN", "type": "OUTCOME", "base_weight": 0.95},
+  
+  {"text_pattern": "vehicle accident", "concept": "VEHICLE_ACCIDENT", "type": "OUTCOME", "base_weight": 0.85},
+  {"text_pattern": "colli(?:sion|ded)", "concept": "COLLISION", "type": "OUTCOME", "base_weight": 0.85},
+  {"text_pattern": "rollover", "concept": "ROLLOVER", "type": "OUTCOME", "base_weight": 0.95},
+  {"text_pattern": "struck by vehicle", "concept": "STRUCK_BY_VEHICLE", "type": "OUTCOME", "base_weight": 1.0},
+  
+  {"text_pattern": "asphyxiat(?:ed|ion)?", "concept": "ASPHYXIATION", "type": "OUTCOME", "base_weight": 1.0},
+  {"text_pattern": "toxic gas", "concept": "TOXIC_EXPOSURE", "type": "HAZARD", "base_weight": 0.95},
+  {"text_pattern": "h2s", "concept": "TOXIC_EXPOSURE", "type": "HAZARD", "base_weight": 0.95},
+  
+  {"text_pattern": "electrocuted?", "concept": "ELECTROCUTION", "type": "OUTCOME", "base_weight": 1.0},
+  {"text_pattern": "shock(?:ed)?", "concept": "ELECTRICAL_SHOCK", "type": "OUTCOME", "base_weight": 0.85}
 ]
