@@ -1,13 +1,16 @@
 import re
 from typing import List
 from app.engines.lsr.rule_loader import LSRRuleDef
-from app.engines.nlp_utils import get_token_context
+from app.engines.nlp_utils import get_token_context, is_valid_safety_context
 
 class LSRMatcher:
     def __init__(self, rules: List[LSRRuleDef]):
         self.rules = rules
 
     def match(self, normalized_text: str) -> dict:
+        if not is_valid_safety_context(normalized_text):
+            return []
+            
         text_lower = normalized_text.lower()
         matches = []
         

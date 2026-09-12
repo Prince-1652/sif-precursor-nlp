@@ -50,3 +50,37 @@ def detect_status(context: str) -> str:
         return "SUCCESSFUL"
         
     return "UNKNOWN"
+
+SAFETY_CONTEXT_KEYWORDS = {
+    # Actors / Context
+    "worker", "workers", "operator", "operators", "team", "contractor", "staff", "employee", 
+    "personnel", "maintenance", "repair", "shift", "site", "job", "task", "duty", "performing", 
+    "working", "doing", "inspecting", "inspection", "area", "floor", "ground", 
+    "permit", "during", "while", "when", "person", "someone", "guy", "man", "people",
+    
+    # Actions / Incidents / Adjectives
+    "occurred", "happened", "got", "noticed", "observed", "found", "reported", "injured", 
+    "hurt", "slipped", "fell", "struck", "caught", "broke", "leaked", "hazard", "issue", 
+    "risk", "spilled", "dropped", "tripped", "unsafe", "broken", "damaged", "missing", 
+    "defective", "failed", "failure", "near", "miss", "incident", "accident", "repairing",
+    "installing", "lifting", "moving", "driving", "operating", "using", "fall", "falls",
+    "falling", "drop", "drops", "dropping", "hit", "hitting", "shock", "shocked", "burn",
+    "burned", "burning", "cut", "crush", "crushed", "crushing", "trip", "trips", "tripping",
+    "slip", "slips", "slipping", "leak", "leaks", "leaking", "spill", "spills", "spilling",
+    "break", "breaks", "breaking", "damage", "damaging"
+}
+
+def is_valid_safety_context(text: str) -> bool:
+    """
+    Checks if a string has basic vocabulary indicating a work context or safety observation.
+    Prevents random sentences (like "money is control panel") from triggering SIF rules.
+    If the text is extremely short (<= 3 words), we assume it's a direct hazard label (like 'Arc flash!') 
+    and allow it to pass to avoid discarding valid short reports.
+    """
+    words = set(re.findall(r'\b\w+\b', text.lower()))
+    
+    if len(words) <= 3:
+        return True
+        
+    has_safety_context = bool(words.intersection(SAFETY_CONTEXT_KEYWORDS))
+    return has_safety_context

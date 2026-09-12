@@ -4,7 +4,7 @@ from typing import List, Any
 from app.engines.sif.rules import SIF_RULES
 from app.engines.sif.negation import get_context_multiplier
 from app.engines.sif.scorer import aggregate_scores, calculate_risk_band
-from app.engines.nlp_utils import get_token_context
+from app.engines.nlp_utils import get_token_context, is_valid_safety_context
 
 @dataclass
 class EvidenceItem:
@@ -43,6 +43,15 @@ class SIFEngine:
         Calculates a SIF potential score based on deterministic rules and context matching.
         Applies a dynamic risk weighting if report_type is provided.
         """
+        if not is_valid_safety_context(normalized_text):
+            return asdict(SIFResult(
+                sif_potential=False,
+                score=0.0,
+                confidence=1.0,
+                risk_band="LOW",
+                evidence=[]
+            ))
+            
         evidence = []
         weights = []
         
