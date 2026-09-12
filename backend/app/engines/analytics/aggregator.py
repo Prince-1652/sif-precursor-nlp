@@ -7,13 +7,7 @@ from app.models.lsr_prediction import LSRPrediction
 from app.models.life_saving_rule import LifeSavingRule
 
 def compute_summary(db: Session) -> dict:
-    total_reports = db.query(Report).filter(
-        Report.processing_status.in_([
-            "COMPLETED", 
-            "AUTO_ACCEPTED_LOW_RISK", 
-            "AUTO_ACCEPTED_HIGH_CONFIDENCE"
-        ])
-    ).count()
+    total_reports = db.query(Report).count()
     
     sif_count = db.query(SIFPrediction).filter(SIFPrediction.is_current == True, SIFPrediction.sif_potential == True).count()
     sif_percentage = (sif_count / total_reports) if total_reports > 0 else 0.0

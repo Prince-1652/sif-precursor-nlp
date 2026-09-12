@@ -4,9 +4,20 @@ from .core.config import settings
 
 from .api.endpoints import reports, jobs, search, dashboard
 from .core.security import verify_api_key, limiter
+from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 from fastapi import Depends, Request
+
+async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    response = JSONResponse(
+        status_code=429,
+        content={"detail": f"Rate limit exceeded: {exc.detail}"}
+    )
+    if settings.BACKEND_CORS_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = str(settings.BACKEND_CORS_ORIGINS[0]) if len(settings.BACKEND_CORS_ORIGINS) > 0 else "*"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -15,7 +26,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(

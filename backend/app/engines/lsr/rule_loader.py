@@ -11,7 +11,7 @@ class LSRRuleDef:
     danger_patterns: List[str]
 
 def load_rules(version: str = "v1") -> List[LSRRuleDef]:
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
     path = os.path.join(base_dir, "config", "lsr_rules", f"lsr_rules_{version}.json")
     
     with open(path, "r", encoding="utf-8") as f:

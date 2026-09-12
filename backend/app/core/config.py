@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     AI_PROVIDER: str = "gemini"          # gemini | mock | local
     AI_TIMEOUT_SECONDS: int = 10
     AI_MAX_RETRIES: int = 3
-    LANGUAGE_CONFIDENCE_THRESHOLD: float = 0.90
+    LANGUAGE_CONFIDENCE_THRESHOLD: float = 0.65
     MIN_REPORT_LENGTH: int = 10
     MIN_SAMPLE_SIZE: int = 30
     APP_MODE: str = "hybrid"             # offline | hybrid

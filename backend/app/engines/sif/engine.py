@@ -75,7 +75,12 @@ class SIFEngine:
         raw_score = aggregate_scores(weights)
         
         # Apply metadata context weighting
-        type_mult = self.TYPE_MULTIPLIERS.get(report_type, 1.0) if report_type else 1.0
+        if report_type:
+            clean_type = report_type.replace('_', ' ').title()
+            type_mult = self.TYPE_MULTIPLIERS.get(clean_type, 1.0)
+        else:
+            type_mult = 1.0
+            
         final_score = min(1.0, raw_score * type_mult)
         
         sif_potential = final_score >= 0.75

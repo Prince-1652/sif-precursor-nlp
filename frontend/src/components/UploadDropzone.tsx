@@ -40,7 +40,10 @@ export function UploadDropzone({ onUploadSuccess }: UploadDropzoneProps) {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Upload failed");
+      if (!res.ok) {
+        if (res.status === 429) throw new Error("Too many requests. Please slow down.");
+        throw new Error("Upload failed");
+      }
       
       setStatus("success");
       setMessage("CSV uploaded successfully. Processing started.");
@@ -50,9 +53,9 @@ export function UploadDropzone({ onUploadSuccess }: UploadDropzoneProps) {
         setStatus("idle");
         setMessage("");
       }, 3000);
-    } catch (err) {
+    } catch (err: any) {
       setStatus("error");
-      setMessage("Failed to upload the file. Ensure the backend is running.");
+      setMessage(err.message || "Failed to upload the file. Ensure the backend is running.");
     }
   };
 

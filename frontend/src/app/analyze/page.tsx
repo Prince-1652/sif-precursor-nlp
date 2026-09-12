@@ -50,7 +50,9 @@ export default function AnalyzePage() {
         const errorData = await res.json().catch(() => null);
         let errorMsg = "Analysis failed due to a server error.";
         
-        if (res.status >= 500) {
+        if (res.status === 429) {
+          errorMsg = "Too many requests. Please slow down.";
+        } else if (res.status >= 500) {
           errorMsg = "Backend server is down or restarting due to a code change. Wait a few seconds and try again, or check your terminal for syntax errors.";
         } else if (errorData?.detail) {
           if (Array.isArray(errorData.detail)) {
@@ -62,7 +64,7 @@ export default function AnalyzePage() {
           }
         }
         setError(errorMsg);
-        console.error("Analysis failed:", errorData || `HTTP ${res.status}`);
+        console.error("Analysis failed:", errorData ? JSON.stringify(errorData) : `HTTP ${res.status}`);
       }
     } catch (e: any) {
       setError(e.message || "Network error occurred");

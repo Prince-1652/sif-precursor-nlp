@@ -27,7 +27,10 @@ export function ManualTextInput({ onUploadSuccess }: ManualTextInputProps) {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to submit report");
+      if (!res.ok) {
+        if (res.status === 429) throw new Error("Too many requests. Please slow down.");
+        throw new Error("Failed to submit report");
+      }
 
       setStatus("success");
       setMessage("Report submitted successfully.");
@@ -38,9 +41,9 @@ export function ManualTextInput({ onUploadSuccess }: ManualTextInputProps) {
         setStatus("idle");
         setMessage("");
       }, 3000);
-    } catch (err) {
+    } catch (err: any) {
       setStatus("error");
-      setMessage("Failed to submit the report.");
+      setMessage(err.message || "Failed to submit the report.");
       
       setTimeout(() => {
         setStatus("idle");
