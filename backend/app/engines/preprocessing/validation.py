@@ -16,4 +16,9 @@ def validate_text(text: str) -> Tuple[bool, List[str], str]:
         errors.append(f"Text is too short. Minimum length is {settings.MIN_REPORT_LENGTH} characters.")
         return False, errors, "INSUFFICIENT_TEXT"
         
+    entropy = len(set(text)) / max(len(text), 1)
+    if entropy < 0.1 and len(text) > 20:
+        errors.append("Text appears to be repetitive or low-entropy garbage.")
+        return False, errors, "INSUFFICIENT_TEXT"
+        
     return True, errors, "READY"

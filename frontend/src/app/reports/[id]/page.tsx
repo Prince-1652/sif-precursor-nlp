@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { ShieldAlert, CheckCircle2, ChevronLeft, GitMerge, FileCheck, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
 
 export default function ReportDetailPage() {
   const params = useParams();
@@ -12,12 +13,67 @@ export default function ReportDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editComment, setEditComment] = useState("");
+  const [riskBand, setRiskBand] = useState("Low");
+  const [selectedLsrs, setSelectedLsrs] = useState<string[]>([]);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [aiSolution, setAiSolution] = useState<string | null>(null);
+  const [loadingSolution, setLoadingSolution] = useState(false);
+
+  const startEditing = () => {
+    setIsEditing(true);
+    let initialRisk = report.report?.risk_band || report.sif_prediction?.risk_band || "Low";
+    if (initialRisk) {
+      initialRisk = initialRisk.charAt(0).toUpperCase() + initialRisk.slice(1).toLowerCase();
+    }
+    setRiskBand(initialRisk);
+    setSelectedLsrs(report.lsr_predictions?.map((l: any) => l.rule_id) || []);
+  };
 
   const fetchReport = useCallback(async () => {
     try {
       const res = await fetch(`/api/v1/reports/${reportId}`);
       if (res.ok) {
-        setReport(await res.json());
+        const data = await res.json();
+        setReport(data);
+        
+        // Load or Fetch AI Summary & Solution sequentially to avoid rate limits
+        const fetchSolution = () => {
+          if (data.report?.ai_solution) {
+            setAiSolution(data.report.ai_solution);
+          } else {
+            setLoadingSolution(true);
+            fetch(`/api/v1/reports/${reportId}/solution`, { method: "POST" })
+              .then(r => r.json())
+              .then(d => {
+                if (d.solution) setAiSolution(d.solution);
+                setLoadingSolution(false);
+              })
+              .catch(e => {
+                console.error(e);
+                setLoadingSolution(false);
+              });
+          }
+        };
+
+        if (data.report?.ai_summary) {
+          setAiSummary(data.report.ai_summary);
+          fetchSolution(); // Start solution immediately if summary is already cached
+        } else {
+          setLoadingSummary(true);
+          fetch(`/api/v1/reports/${reportId}/second-opinion`, { method: "POST" })
+            .then(r => r.json())
+            .then(d => {
+              if (d.summary) setAiSummary(d.summary);
+              setLoadingSummary(false);
+              fetchSolution(); // Chain solution after summary finishes
+            })
+            .catch(e => {
+              console.error(e);
+              setLoadingSummary(false);
+              fetchSolution(); // Still try to fetch solution if summary failed
+            });
+        }
       }
     } catch (e) {
       console.error(e);
@@ -31,11 +87,11 @@ export default function ReportDetailPage() {
   }, [fetchReport, reportId]);
 
   if (loading) {
-    return <div className="p-8 text-gray-400">Loading Report details...</div>;
+    return <div className="p-8 text-[var(--color-claude-text-secondary)] font-serif italic">Loading Report details...</div>;
   }
 
   if (!report) {
-    return <div className="p-8 text-red-400">Report not found.</div>;
+    return <div className="p-8 text-red-700 font-medium">Report not found.</div>;
   }
 
   const handleReview = async (decision: string) => {
@@ -43,6 +99,8 @@ export default function ReportDetailPage() {
       const payload: any = { decision };
       if (decision === "EDIT") {
         payload.comment = editComment;
+        payload.risk_band = riskBand;
+        payload.corrected_lsr_ids = selectedLsrs;
       }
       const res = await fetch(`/api/v1/reports/${reportId}/review`, {
         method: "POST",
@@ -88,7 +146,7 @@ export default function ReportDetailPage() {
           result.push(<span key={`t-${idx}`}>{text.substring(lastIndex, start)}</span>);
         }
         result.push(
-          <span key={`h-${idx}`} className="bg-blue-500/30 text-blue-100 font-medium px-1 rounded">
+          <span key={`h-${idx}`} className="bg-[var(--color-claude-accent)]/20 text-[var(--color-claude-text)] font-medium px-1.5 py-0.5 rounded">
             {text.substring(start, end)}
           </span>
         );
@@ -105,38 +163,38 @@ export default function ReportDetailPage() {
         {report.report?.ai_used ? (
           <>
             <div className="mb-6">
-              <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <FileCheck className="text-gray-500" size={16} /> Original Text (Non-English)
+              <h4 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+                <FileCheck className="text-[var(--color-claude-text-secondary)]" size={16} /> Original Text (Non-English)
               </h4>
-              <p className="text-gray-400 leading-relaxed text-md bg-black/20 p-5 rounded-xl border border-white/5 italic">
+              <p className="text-[var(--color-claude-text-secondary)] leading-relaxed text-base bg-[var(--color-claude-bg-secondary)] p-5 rounded-xl border border-[var(--color-claude-border)] italic">
                 {report.report?.original_text}
               </p>
             </div>
-            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <ShieldAlert className="text-blue-500" size={16} /> Translated Text (English)
+            <h4 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+              <ShieldAlert className="text-[var(--color-claude-accent)]" size={16} /> Translated Text (English)
             </h4>
           </>
         ) : (
-          <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <ShieldAlert className="text-blue-500" size={16} /> Original Text <span className="text-gray-500 text-xs ml-2 font-normal">(No translation needed)</span>
+          <h4 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
+            <ShieldAlert className="text-[var(--color-claude-accent)]" size={16} /> Original Text <span className="text-[var(--color-claude-text-secondary)] text-sm ml-2 font-normal">(No translation needed)</span>
           </h4>
         )}
-        <p className="text-gray-300 leading-relaxed text-lg bg-white/5 p-6 rounded-xl border border-white/10">
+        <p className="text-[var(--color-claude-text)] leading-relaxed text-lg bg-white p-6 rounded-xl border border-[var(--color-claude-border)] shadow-sm">
           {result.length > 0 ? result : text}
         </p>
         
         {report.evidence && report.evidence.length > 0 && (
           <div className="mt-4">
-            <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Evidence Highlights</h4>
+            <h4 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-wider mb-3">Evidence Highlights</h4>
             <div className="space-y-2">
               {report.evidence.map((ev: any, idx: number) => (
-                <div key={idx} className="bg-blue-500/10 border border-blue-500/20 text-blue-300 p-3 rounded-lg text-sm flex gap-3">
-                  <span className="font-mono text-blue-500 bg-blue-500/20 px-2 py-0.5 rounded text-xs shrink-0">
+                <div key={idx} className="bg-blue-50 border border-blue-200 text-blue-900 p-4 rounded-lg text-sm flex gap-3 shadow-sm">
+                  <span className="font-mono text-blue-700 bg-blue-100/50 px-2 py-0.5 rounded text-sm shrink-0 border border-blue-200">
                     {ev.start_offset}:{ev.end_offset}
                   </span>
                   <div>
-                    <strong className="text-white block mb-1">"{ev.phrase}"</strong>
-                    <span className="text-blue-400/80">Matched Concept: {ev.concept}</span>
+                    <strong className="text-blue-900 block mb-1">"{ev.phrase}"</strong>
+                    <span className="text-blue-700/90">Matched Concept: {ev.concept}</span>
                   </div>
                 </div>
               ))}
@@ -148,16 +206,16 @@ export default function ReportDetailPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex items-center gap-4">
-        <Link href="/reports" className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+        <Link href="/reports" className="p-2 bg-white border border-[var(--color-claude-border)] rounded-lg hover:bg-[var(--color-claude-bg-secondary)] text-[var(--color-claude-text-secondary)] hover:text-[var(--color-claude-text)] transition-colors shadow-sm">
           <ChevronLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Report Details</h1>
-          <p className="text-gray-400 font-mono text-sm">{report.report?.id}</p>
+          <h1 className="text-4xl font-serif font-bold text-[var(--color-claude-text)] mb-1">Report Details</h1>
+          <p className="text-[var(--color-claude-text-secondary)] font-mono text-sm">{report.report?.id}</p>
           {report.report?.processing_status && (
-            <span className="inline-block mt-2 px-3 py-1 bg-white/10 text-white rounded-full text-xs font-semibold">
+            <span className="inline-block mt-2 px-3 py-1.5 bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border-strong)] text-[var(--color-claude-text-secondary)] rounded-full text-sm font-medium">
               Status: {report.report.processing_status}
             </span>
           )}
@@ -168,108 +226,168 @@ export default function ReportDetailPage() {
         
         {/* Left Column: Original Text & Highlights */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
-            <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-              <FileCheck className="text-blue-500" size={24} /> Original Text
+          <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm">
+            <h2 className="text-2xl font-serif font-bold text-[var(--color-claude-text)] mb-6 flex items-center gap-2">
+              <FileCheck className="text-[var(--color-claude-accent)]" size={24} /> Original Text
             </h2>
             {renderHighlightedText()}
           </div>
           
           {/* Normalization Trace */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
-            <h3 className="text-lg font-semibold text-white mb-4">Normalization Trace</h3>
+          <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm">
+            <h3 className="text-xl font-serif font-bold text-[var(--color-claude-text)] mb-4">Normalization Trace</h3>
             <div className="space-y-3">
               {report.normalizations && report.normalizations.length > 0 && report.normalizations[0].normalization_trace && report.normalizations[0].normalization_trace.length > 0 ? (
                 report.normalizations[0].normalization_trace.map((trace: any, idx: number) => (
-                  <div key={idx} className="flex items-center gap-3 text-sm text-gray-400 bg-black/40 p-3 rounded-lg">
-                    <span className="font-mono text-gray-300">"{trace.from || trace.found || trace.rule}"</span>
-                    <ArrowRight size={14} className="text-gray-500" />
-                    <span className="font-mono text-green-400">"{trace.to || trace.concept || trace.language}"</span>
-                    <span className="ml-auto text-xs text-gray-500 bg-white/5 px-2 py-1 rounded">Rule: {trace.rule}</span>
+                  <div key={idx} className="flex items-center gap-3 text-base text-[var(--color-claude-text-secondary)] bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border)] p-3 rounded-lg">
+                    <span className="font-mono text-[var(--color-claude-text)] line-through decoration-red-300">"{trace.from || trace.found || trace.rule}"</span>
+                    <ArrowRight size={14} className="text-[var(--color-claude-text-secondary)]" />
+                    <span className="font-mono text-[var(--color-claude-text)]">"{trace.to || trace.concept || trace.language}"</span>
+                    <span className="ml-auto text-sm text-[var(--color-claude-text-secondary)] bg-white border border-[var(--color-claude-border)] px-2 py-1 rounded">Rule: {trace.rule}</span>
                   </div>
                 ))
               ) : (
-                <div className="text-gray-500 text-sm p-3 bg-black/20 rounded-lg">No normalization needed.</div>
+                <div className="text-[var(--color-claude-text-secondary)] text-base p-3 bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border)] rounded-lg italic font-serif">No normalization needed.</div>
               )}
             </div>
+          </div>
+          
+          {/* AI Summary */}
+          <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm overflow-hidden relative">
+            <h3 className="text-xl font-serif font-bold text-[var(--color-claude-text)] mb-4 flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className={`${loadingSummary ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-[var(--color-claude-accent)] opacity-75`}></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--color-claude-accent)]"></span>
+              </span>
+              AI Summary
+            </h3>
+            
+            {loadingSummary ? (
+              <div className="space-y-3 animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+              </div>
+            ) : aiSummary ? (
+              <p className="text-[var(--color-claude-text)] text-base leading-relaxed animate-in fade-in">
+                {aiSummary}
+              </p>
+            ) : (
+              <p className="text-[var(--color-claude-text-secondary)] italic text-sm">Failed to load summary.</p>
+            )}
+          </div>
+          
+          {/* AI Proposed Solution */}
+          <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm overflow-hidden relative">
+            <h3 className="text-xl font-serif font-bold text-[var(--color-claude-text)] mb-4 flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className={`${loadingSolution ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75`}></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+              AI Proposed Solution
+            </h3>
+            
+            {loadingSolution ? (
+              <div className="space-y-3 animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+              </div>
+            ) : aiSolution ? (
+              <div className="text-[var(--color-claude-text)] text-base leading-relaxed animate-in fade-in markdown-content">
+                <ReactMarkdown
+                  components={{
+                    ul: ({node, ...props}) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+                    ol: ({node, ...props}) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
+                    li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                    strong: ({node, ...props}) => <strong className="font-bold text-[var(--color-claude-text)]" {...props} />,
+                    p: ({node, ...props}) => <p className="mb-2" {...props} />
+                  }}
+                >
+                  {aiSolution}
+                </ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-[var(--color-claude-text-secondary)] italic text-sm">Failed to load solution.</p>
+            )}
           </div>
         </div>
 
         {/* Right Column: AI & Analysis Sidebar */}
         <div className="space-y-6">
           {/* SIF Prediction Box */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">SIF Analysis</h3>
+          <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-4">SIF Analysis</h3>
             {report.sif_prediction ? (
               <div className="space-y-4">
-                <div className={`p-4 rounded-xl border flex items-center gap-3 ${report.sif_prediction.sif_potential ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'}`}>
+                <div className={`p-4 rounded-xl border flex items-center gap-3 ${report.sif_prediction.sif_potential ? 'bg-[#FCF5F3] border-[#F2DCD5] text-[var(--color-claude-accent)]' : 'bg-[#F2F6F3] border-[#DCE4DD] text-[#5C6E53]'}`}>
                   {report.sif_prediction.sif_potential ? <ShieldAlert size={24} /> : <CheckCircle2 size={24} />}
                   <div>
-                    <div className="text-lg font-bold">{report.sif_prediction.sif_potential ? 'SIF Potential' : 'No SIF Potential'}</div>
-                    <div className="text-xs opacity-80">Risk Band: {report.sif_prediction.risk_band}</div>
+                    <div className="text-xl font-serif font-medium">{report.sif_prediction.sif_potential ? 'SIF Potential' : 'No SIF Potential'}</div>
+                    <div className="text-sm opacity-80">Risk Band: <span className="font-bold">{report.sif_prediction.risk_band}</span></div>
                   </div>
                 </div>
-                <div className="flex justify-between text-sm text-gray-400">
+                <div className="flex justify-between text-sm text-[var(--color-claude-text-secondary)] font-medium">
                   <span>Score: {(report.sif_prediction.score * 100).toFixed(1)}%</span>
                   <span>Confidence: {(report.sif_prediction.confidence * 100).toFixed(1)}%</span>
                 </div>
               </div>
             ) : (
-              <div className="text-gray-500 text-sm">No SIF data available.</div>
+              <div className="text-[var(--color-claude-text-secondary)] text-sm italic font-serif">No SIF data available.</div>
             )}
           </div>
 
           {/* LSR Predictions Box */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Life-Saving Rules</h3>
+          <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-4">Life-Saving Rules</h3>
             {report.lsr_predictions && report.lsr_predictions.length > 0 ? (
               <ul className="space-y-3">
                 {report.lsr_predictions.map((lsr: any, idx: number) => (
-                  <li key={idx} className="bg-orange-500/10 border border-orange-500/20 text-orange-400 px-4 py-3 rounded-xl text-sm font-medium">
+                  <li key={idx} className="bg-white border border-[var(--color-claude-border-strong)] text-[var(--color-claude-text)] px-4 py-3 rounded-xl text-sm font-medium shadow-sm">
                     <div className="flex justify-between items-center mb-1">
                       <span>{lsr.rule_id}</span>
-                      <span className="text-xs opacity-70">{(lsr.confidence * 100).toFixed(0)}% Conf</span>
+                      <span className="text-xs text-[var(--color-claude-text-secondary)]">{(lsr.confidence * 100).toFixed(0)}% Conf</span>
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="text-gray-500 text-sm">No LSR matches.</div>
+              <div className="text-[var(--color-claude-text-secondary)] text-sm italic font-serif">No LSR matches.</div>
             )}
           </div>
 
           {/* Extracted Entities */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Extracted Entities</h3>
+          <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-4">Extracted Entities</h3>
             {report.entities && report.entities.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {report.entities.map((ent: any, idx: number) => (
-                  <span key={idx} className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-2 py-1 rounded text-xs font-medium">
-                    {ent.entity_type}: {ent.value}
+                  <span key={idx} className="bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border)] text-[var(--color-claude-text)] px-3 py-1.5 rounded-md text-sm font-medium">
+                    <span className="text-[var(--color-claude-text-secondary)] mr-1">{ent.entity_type}:</span> {ent.value}
                   </span>
                 ))}
               </div>
             ) : (
-              <div className="text-gray-500 text-sm">No entities extracted.</div>
+              <div className="text-[var(--color-claude-text-secondary)] text-sm italic font-serif">No entities extracted.</div>
             )}
           </div>
 
           {/* Review History */}
           {report.reviews && report.reviews.length > 0 && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Review History</h3>
+            <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm">
+              <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-4">Review History</h3>
               <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {report.reviews.map((rev: any, idx: number) => (
-                  <div key={idx} className="bg-black/40 border border-white/5 p-4 rounded-xl space-y-2">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-gray-300">{rev.reviewer_id}</span>
-                      <span className="text-gray-500">{new Date(rev.created_at).toLocaleString()}</span>
+                  <div key={idx} className="bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border)] p-4 rounded-xl space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-bold text-[var(--color-claude-text)]">{rev.reviewer_id}</span>
+                      <span className="text-[var(--color-claude-text-secondary)]">{new Date(rev.created_at).toLocaleString()}</span>
                     </div>
-                    <div className="text-xs">
-                      Decision: <span className={`font-semibold ${rev.decision === 'CONFIRM' ? 'text-blue-400' : rev.decision === 'REJECT' ? 'text-red-400' : 'text-gray-300'}`}>{rev.decision}</span>
+                    <div className="text-sm">
+                      Decision: <span className={`font-bold ${rev.decision === 'CONFIRM' ? 'text-green-700' : rev.decision === 'REJECT' ? 'text-red-700' : 'text-[var(--color-claude-text)]'}`}>{rev.decision}</span>
                     </div>
                     {rev.comment && (
-                      <div className="text-sm text-gray-300 mt-2 p-3 bg-white/5 rounded-lg border border-white/5">
+                      <div className="text-sm text-[var(--color-claude-text)] mt-2 p-3 bg-white rounded-lg border border-[var(--color-claude-border)]">
                         {rev.comment}
                       </div>
                     )}
@@ -280,38 +398,89 @@ export default function ReportDetailPage() {
           )}
 
           {/* Review Actions */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Review Action</h3>
+          <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm">
+            <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-4">Review Action</h3>
             {!isEditing ? (
               <div className="space-y-3">
-                <button onClick={() => handleReview("CONFIRM")} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-blue-500/20">
+                <button onClick={() => handleReview("CONFIRM")} className="w-full bg-[var(--color-claude-text)] hover:bg-[#1a1816] text-white font-medium py-3 rounded-xl transition-colors shadow-sm">
                   Confirm Machine Decision
                 </button>
-                <button onClick={() => handleReview("REJECT")} className="w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 font-medium py-3 rounded-xl transition-colors shadow-lg shadow-red-500/10">
-                  Reject Decision
-                </button>
-                <button onClick={() => setIsEditing(true)} className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-medium py-3 rounded-xl transition-colors">
+                <button onClick={startEditing} className="w-full bg-white hover:bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border-strong)] text-[var(--color-claude-text)] font-medium py-3 rounded-xl transition-colors shadow-sm">
                   Override / Edit
                 </button>
               </div>
             ) : (
-              <div className="space-y-3 animate-in fade-in">
+              <div className="space-y-5 animate-in fade-in">
+                {/* Risk Band Slider */}
+                <div className="p-4 bg-[var(--color-claude-bg-secondary)] rounded-lg border border-[var(--color-claude-border)]">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-bold text-[var(--color-claude-text)]">SIF Risk Level</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${riskBand === 'High' ? 'bg-red-100 text-red-800' : riskBand === 'Medium' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
+                      {riskBand}
+                    </span>
+                  </div>
+                  <div className="relative px-2 mt-4 mb-2">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="2" 
+                      step="1"
+                      value={riskBand === 'Low' ? 0 : riskBand === 'Medium' ? 1 : 2}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setRiskBand(val === 0 ? "Low" : val === 1 ? "Medium" : "High");
+                      }}
+                      className="w-full h-4 bg-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--color-claude-accent)]/20 
+                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-[var(--color-claude-accent)] [&::-webkit-slider-thumb]:rounded-md [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110
+                        [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:bg-[var(--color-claude-accent)] [&::-moz-range-thumb]:rounded-md [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:transition-transform [&::-moz-range-thumb]:hover:scale-110"
+                    />
+                    <div className="flex justify-between text-xs text-[var(--color-claude-text-secondary)] font-medium mt-3 px-1">
+                      <span>Low</span>
+                      <span>Medium</span>
+                      <span>High</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* LSR Selector */}
+                <div>
+                  <label className="block text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-wider mb-2">Life-Saving Rules</label>
+                  <div className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                    {[
+                      "BYPASSING_SAFETY_CONTROLS", "CONFINED_SPACE", "DRIVING", "ENERGY_ISOLATION", 
+                      "HOT_WORK", "LINE_OF_FIRE", "SAFE_MECHANICAL_LIFTING", "WORKING_AT_HEIGHT", "PERMIT_TO_WORK"
+                    ].map(rule => (
+                      <label key={rule} className="flex items-center gap-3 p-2 hover:bg-[var(--color-claude-bg-secondary)] rounded-lg cursor-pointer transition-colors border border-transparent hover:border-[var(--color-claude-border)]">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedLsrs.includes(rule)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedLsrs([...selectedLsrs, rule]);
+                            else setSelectedLsrs(selectedLsrs.filter(r => r !== rule));
+                          }}
+                          className="w-4 h-4 text-[var(--color-claude-accent)] rounded focus:ring-[var(--color-claude-accent)]"
+                        />
+                        <span className="text-sm font-medium text-[var(--color-claude-text)]">{rule}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <textarea 
                   value={editComment}
                   onChange={(e) => setEditComment(e.target.value)}
-                  placeholder="Enter correction notes..."
-                  className="w-full h-24 bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                  placeholder="Enter correction notes (optional)..."
+                  className="w-full h-24 bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border-strong)] rounded-xl p-3 text-[var(--color-claude-text)] placeholder-[var(--color-claude-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-claude-accent)]/20 focus:border-[var(--color-claude-accent)] resize-none text-base"
                 />
                 <div className="flex gap-2">
-                  <button onClick={() => setIsEditing(false)} className="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 py-2 rounded-lg text-sm transition-colors border border-white/10">
+                  <button onClick={() => setIsEditing(false)} className="flex-1 bg-white hover:bg-[var(--color-claude-bg-secondary)] text-[var(--color-claude-text)] py-2.5 rounded-lg text-sm font-bold transition-colors border border-[var(--color-claude-border-strong)] shadow-sm">
                     Cancel
                   </button>
                   <button 
                     onClick={() => handleReview("EDIT")} 
-                    disabled={!editComment.trim()}
-                    className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2 rounded-lg text-sm transition-colors shadow-lg shadow-blue-500/20"
+                    className="flex-1 bg-[var(--color-claude-text)] hover:bg-[#1a1816] text-white py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm"
                   >
-                    Submit Edit
+                    Submit Override
                   </button>
                 </div>
               </div>

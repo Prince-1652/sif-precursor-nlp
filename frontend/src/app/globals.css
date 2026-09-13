@@ -1,11 +1,50 @@
 @import "tailwindcss";
 
+@theme {
+  --color-claude-bg: #FDFBF7;
+  --color-claude-bg-secondary: #F4F1EC;
+  --color-claude-text: #2D2926;
+  --color-claude-text-secondary: #736F6A;
+  --color-claude-accent: #DA7756;
+  --color-claude-accent-hover: #C56142;
+  --color-claude-border: #EAE6DF;
+  --color-claude-border-strong: #D5CFC5;
+
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+}
+
+html {
+  font-size: 17.5px; /* Increases all rem-based text and padding by ~10% */
+}
+
 body {
-  background-color: #050505;
-  background-image: 
-    radial-gradient(at 100% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-    radial-gradient(at 0% 100%, hsla(253,16%,7%,1) 0, transparent 50%);
-  background-attachment: fixed;
-  color: #EDEDED;
+  background-color: var(--color-claude-bg);
+  color: var(--color-claude-text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: var(--color-claude-accent);
+  color: white;
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-claude-border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-claude-text-secondary);
 }

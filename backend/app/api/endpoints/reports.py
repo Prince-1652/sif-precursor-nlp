@@ -46,6 +46,9 @@ async def create_manual_report(report_in: ReportCreate, background_tasks: Backgr
     from app.services.ingestion import generate_source_hash
     import uuid
     
+    if len(report_in.original_text) > 10000:
+        raise HTTPException(status_code=400, detail="Text too long. Maximum 10,000 characters.")
+    
     source_hash = generate_source_hash(report_in.original_text)
     
     # Deduplication: If text was already processed (from CSV or Manual), return the existing report instantly!
@@ -89,6 +92,8 @@ class ReviewActionRequest(BaseModel):
     corrected_entities: Optional[List[dict]] = None
     comment: Optional[str] = None
     original_prediction_id: Optional[UUID] = None
+    sif_potential: Optional[bool] = None
+    risk_band: Optional[str] = None
 
 @router.post("/{report_id}/review")
 def submit_review(report_id: UUID, review_in: ReviewActionRequest, db: Session = Depends(deps.get_db)):
@@ -110,11 +115,51 @@ def submit_review(report_id: UUID, review_in: ReviewActionRequest, db: Session =
     )
     db.add(review)
     
-    # Update report status
+    # Update report status and data
     if review_in.decision.value == "CONFIRM":
         report.processing_status = "COMPLETED"
     elif review_in.decision.value == "EDIT":
         report.processing_status = "COMPLETED_WITH_EDITS"
+        report.ai_summary = None
+        report.ai_solution = None
+        
+        # Override Risk Band / SIF if provided
+        if review_in.risk_band is not None:
+            report.risk_band = review_in.risk_band
+            report.sif_potential = review_in.risk_band in ["Medium", "High"]
+                
+            from app.models.sif_prediction import SIFPrediction
+            sif_pred = db.query(SIFPrediction).filter(SIFPrediction.report_id == str(report.id), SIFPrediction.is_current == True).first()
+            if sif_pred:
+                sif_pred.sif_potential = report.sif_potential
+                sif_pred.risk_band = report.risk_band
+                sif_pred.method = "human_override"
+                
+        # Override LSRs if provided
+        if review_in.corrected_lsr_ids is not None:
+            from app.models.lsr_prediction import LSRPrediction
+            from app.models.life_saving_rule import LifeSavingRule
+            
+            # Deactivate old ones
+            db.query(LSRPrediction).filter(LSRPrediction.report_id == str(report.id), LSRPrediction.is_current == True).update({"is_current": False})
+            
+            # Create new ones
+            for code in review_in.corrected_lsr_ids:
+                rule = db.query(LifeSavingRule).filter(LifeSavingRule.rule_code == code).first()
+                if rule:
+                    new_pred = LSRPrediction(
+                        report_id=report.id,
+                        rule_id=rule.id,
+                        is_current=True,
+                        matched=True,
+                        score=1.0,
+                        confidence=1.0,
+                        method="human_override",
+                        matched_phrases=[],
+                        engine_version="1.0"
+                    )
+                    db.add(new_pred)
+                    
     elif review_in.decision.value == "REJECT":
         report.processing_status = "REJECTED"
         
@@ -125,14 +170,96 @@ def submit_review(report_id: UUID, review_in: ReviewActionRequest, db: Session =
         event_type="REVIEWED",
         actor_type="HUMAN",
         actor_id="human_reviewer",
-        payload={"decision": review_in.decision.value, "comment": review_in.comment}
+        payload={"decision": review_in.decision.value, "comment": review_in.comment, "sif_override": review_in.sif_potential}
     ))
     
     db.commit()
     return {"status": "success", "decision": review_in.decision}
 
+@router.get("/progress")
+def get_processing_progress(db: Session = Depends(deps.get_db)):
+    from app.models.job import ProcessingJob
+    
+    # Get the most recent job
+    active_job = db.query(ProcessingJob).order_by(ProcessingJob.created_at.desc()).first()
+    if not active_job:
+        return {"active": False, "total": 0, "completed": 0, "pending": 0}
+        
+    total_ingested = active_job.processed_records
+    if total_ingested == 0:
+        return {"active": False, "total": 0, "completed": 0, "pending": 0}
+        
+    # Count how many reports in this job are still pending (READY or PROCESSING)
+    pending_count = db.query(Report).filter(
+        Report.job_id == active_job.id,
+        Report.processing_status.in_(["READY", "PROCESSING"])
+    ).count()
+    
+    return {
+        "active": pending_count > 0,
+        "total": total_ingested,
+        "completed": total_ingested - pending_count,
+        "pending": pending_count
+    }
+
+@router.post("/{report_id}/second-opinion")
+async def get_report_second_opinion(report_id: UUID, db: Session = Depends(deps.get_db)):
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    if report.ai_summary:
+        return {"summary": report.ai_summary}
+        
+    from app.providers.groq_provider import GroqProvider
+    from app.models.lsr_prediction import LSRPrediction
+    
+    lsrs = db.query(LSRPrediction).filter(LSRPrediction.report_id == str(report.id), LSRPrediction.is_current == True).all()
+    lsr_codes = [lsr.rule.rule_code if lsr.rule else str(lsr.rule_id) for lsr in lsrs]
+    
+    text_to_analyze = report.normalized_text or report.original_text
+    
+    provider = GroqProvider()
+    summary = await provider.get_second_opinion(
+        text=text_to_analyze,
+        sif_potential=bool(report.sif_potential),
+        lsrs=lsr_codes
+    )
+    
+    report.ai_summary = summary
+    db.commit()
+    return {"summary": summary}
+
+@router.post("/{report_id}/solution")
+async def get_report_solution(report_id: UUID, db: Session = Depends(deps.get_db)):
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    if report.ai_solution:
+        return {"solution": report.ai_solution}
+        
+    from app.providers.groq_provider import GroqProvider
+    from app.models.lsr_prediction import LSRPrediction
+    
+    lsrs = db.query(LSRPrediction).filter(LSRPrediction.report_id == str(report.id), LSRPrediction.is_current == True).all()
+    lsr_codes = [lsr.rule.rule_code if lsr.rule else str(lsr.rule_id) for lsr in lsrs]
+    
+    text_to_analyze = report.normalized_text or report.original_text
+    
+    provider = GroqProvider()
+    solution = await provider.get_ai_solution(
+        text=text_to_analyze,
+        sif_potential=bool(report.sif_potential),
+        lsrs=lsr_codes
+    )
+    
+    report.ai_solution = solution
+    db.commit()
+    return {"solution": solution}
+
 @router.get("", response_model=List[ReportResponse])
-def get_reports(db: Session = Depends(deps.get_db), limit: int = 50):
+def get_reports(db: Session = Depends(deps.get_db), limit: int = 1000):
     return db.query(Report).order_by(Report.created_at.desc()).limit(limit).all()
 
 @router.get("/{report_id}")
@@ -178,7 +305,9 @@ def get_report_details(report_id: UUID, db: Session = Depends(deps.get_db)):
             "sif_score": report.sif_score,
             "risk_band": report.risk_band,
             "ai_used": report.ai_used,
-            "language_code": report.language_code
+            "language_code": report.language_code,
+            "ai_summary": report.ai_summary,
+            "ai_solution": report.ai_solution
         },
         "sif_prediction": sif,
         "lsr_predictions": lsr_data,
@@ -238,6 +367,24 @@ async def analyze_report_sync(request: Request, req: AnalyzeRequest):
     
     review_state, contradictions, updated_sif_result = decision_engine.orchestrate(sif_result, lsr_results, entity_results)
     
+    # Generate AI Summary and Solution sequentially to avoid rate limits
+    ai_summary = None
+    ai_solution = None
+    try:
+        from app.providers.groq_provider import GroqProvider
+        provider = GroqProvider()
+        
+        # lsr_results is a list of dicts. We need the "rule_id" key.
+        lsr_codes = [r.get("rule_id") for r in lsr_results if isinstance(r, dict)]
+        
+        sif_potential = updated_sif_result.get("sif_potential", False) if isinstance(updated_sif_result, dict) else getattr(updated_sif_result, "sif_potential", False)
+        
+        ai_summary = await provider.get_second_opinion(norm_text, sif_potential, lsr_codes)
+        ai_solution = await provider.get_ai_solution(norm_text, sif_potential, lsr_codes)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error generating AI insights in live analyze: {e}")
+    
     return {
         "processing_path": decision.value,
         "ai_used": ai_used,
@@ -249,5 +396,7 @@ async def analyze_report_sync(request: Request, req: AnalyzeRequest):
         "lsr_predictions": lsr_results,
         "entities": entity_results,
         "review_state": review_state,
-        "contradictions": contradictions
+        "contradictions": contradictions,
+        "ai_summary": ai_summary,
+        "ai_solution": ai_solution
     }

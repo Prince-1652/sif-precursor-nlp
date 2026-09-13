@@ -53,43 +53,45 @@ export function ManualTextInput({ onUploadSuccess }: ManualTextInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white/5 border border-white/10 rounded-[28px] p-8 flex flex-col mt-8">
-      <h3 className="text-lg font-bold text-white mb-4">Paste Single Report</h3>
+    <form onSubmit={handleSubmit} className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 flex flex-col shadow-sm focus-within:border-[var(--color-claude-border-strong)] transition-colors">
+      <h3 className="text-xl font-serif font-medium text-[var(--color-claude-text)] mb-6 tracking-tight">Direct Entry</h3>
       
       <select 
         value={reportType}
         onChange={(e) => setReportType(e.target.value)}
-        className="mb-4 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm font-medium text-white outline-none focus:ring-2 focus:ring-blue-500/50"
+        className="mb-5 bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border-strong)] rounded-lg px-4 py-3 text-sm text-[var(--color-claude-text)] outline-none focus:ring-2 focus:ring-[var(--color-claude-accent)]/20 transition-all"
       >
-        <option value="Incident" className="bg-gray-900 text-white">Incident</option>
-        <option value="Near Miss" className="bg-gray-900 text-white">Near Miss</option>
-        <option value="Unsafe Act" className="bg-gray-900 text-white">Unsafe Act</option>
-        <option value="Unsafe Condition" className="bg-gray-900 text-white">Unsafe Condition</option>
-        <option value="Spill" className="bg-gray-900 text-white">Spill</option>
-        <option value="Observation" className="bg-gray-900 text-white">Observation</option>
+        <option value="Incident">Incident</option>
+        <option value="Near Miss">Near Miss</option>
+        <option value="Unsafe Act">Unsafe Act</option>
+        <option value="Unsafe Condition">Unsafe Condition</option>
+        <option value="Spill">Spill</option>
+        <option value="Observation">Observation</option>
       </select>
 
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Paste your safety report here for live analysis..."
-        className="w-full h-32 p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/50 resize-none text-white placeholder:text-gray-500 font-medium mb-4"
+        placeholder="Type or paste a safety narrative here..."
+        className="w-full h-40 p-4 bg-transparent border border-[var(--color-claude-border)] rounded-lg outline-none focus:border-[var(--color-claude-accent)] resize-none text-[var(--color-claude-text)] placeholder:text-[var(--color-claude-text-secondary)] font-serif italic text-lg leading-relaxed mb-6 transition-all"
       />
 
-      <button
-        type="submit"
-        disabled={status === "submitting" || !text.trim()}
-        className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-white/10 disabled:to-white/10 disabled:text-white/30 text-white font-bold rounded-xl transition-all shadow-md active:translate-y-0 hover:-translate-y-0.5"
-      >
-        {status === "submitting" ? (
-          <><Loader2 size={18} className="animate-spin" /> Processing...</>
-        ) : (
-          <><Send size={18} /> Analyze Report</>
-        )}
-      </button>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={status === "submitting" || !text.trim()}
+          className="flex items-center justify-center gap-2 px-8 py-3 bg-[var(--color-claude-text)] hover:bg-[#1a1816] disabled:bg-[var(--color-claude-border-strong)] disabled:text-white/50 text-white rounded-md transition-all shadow-sm font-medium"
+        >
+          {status === "submitting" ? (
+            <><Loader2 size={18} className="animate-spin" /> Ingesting...</>
+          ) : (
+            <><Send size={18} /> Submit to Pipeline</>
+          )}
+        </button>
+      </div>
 
       {message && (
-        <p className={`mt-4 text-sm font-bold text-center ${status === "success" ? "text-emerald-600" : "text-red-500"}`}>
+        <p className={`mt-5 text-sm font-medium text-center ${status === "success" ? "text-green-700 bg-green-50 p-2 rounded" : "text-red-700 bg-red-50 p-2 rounded"}`}>
           {message}
         </p>
       )}

@@ -8,7 +8,7 @@ from app.models.report import Report
 from app.models.job import ProcessingJob
 
 def generate_source_hash(text: str) -> str:
-    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+    return hashlib.sha256(text.strip().lower().encode('utf-8')).hexdigest()
 
 def process_csv_upload(db: Session, file_content: bytes, filename: str) -> ProcessingJob:
     decoded_content = file_content.decode('utf-8-sig')

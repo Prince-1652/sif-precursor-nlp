@@ -46,7 +46,7 @@ export function UploadDropzone({ onUploadSuccess }: UploadDropzoneProps) {
       }
       
       setStatus("success");
-      setMessage("CSV uploaded successfully. Processing started.");
+      setMessage("Data successfully ingested. Pipeline processing started.");
       onUploadSuccess();
       
       setTimeout(() => {
@@ -78,8 +78,10 @@ export function UploadDropzone({ onUploadSuccess }: UploadDropzoneProps) {
   return (
     <div
       className={clsx(
-        "bg-white/5 backdrop-blur-xl border shadow-lg rounded-[28px] relative flex flex-col items-center justify-center p-12 transition-all duration-300 border-dashed border-[1.5px]",
-        isDragging ? "border-blue-400 bg-blue-500/10 scale-[1.02]" : "border-white/20 hover:border-white/40 hover:bg-white/10"
+        "bg-white border rounded-xl relative flex flex-col items-center justify-center p-10 transition-all duration-300 border-dashed border-2 cursor-pointer shadow-sm",
+        isDragging 
+          ? "border-[var(--color-claude-accent)] bg-[var(--color-claude-bg-secondary)] scale-[1.01]" 
+          : "border-[var(--color-claude-border-strong)] hover:border-[var(--color-claude-text-secondary)] hover:bg-[var(--color-claude-bg-secondary)]"
       )}
       onDragEnter={handleDrag}
       onDragLeave={handleDrag}
@@ -96,33 +98,33 @@ export function UploadDropzone({ onUploadSuccess }: UploadDropzoneProps) {
       
       {status === "idle" && (
         <>
-          <div className="w-16 h-16 bg-white/60 backdrop-blur-md shadow-sm border border-white/80 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
-            <UploadCloud size={28} strokeWidth={2.5} />
+          <div className="w-16 h-16 bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border)] text-[var(--color-claude-text)] rounded-full flex items-center justify-center mb-6 shadow-sm">
+            <UploadCloud size={28} strokeWidth={2} />
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">Upload Safety Reports</h3>
-          <p className="text-sm text-gray-400 text-center max-w-sm font-medium">
-            Drag and drop your CSV file here, or click to browse. AI will automatically analyze the contents.
+          <h3 className="text-xl font-serif font-medium text-[var(--color-claude-text)] mb-3 tracking-tight">Upload Dataset</h3>
+          <p className="text-sm text-[var(--color-claude-text-secondary)] text-center max-w-sm">
+            Drag and drop your CSV dataset here, or click to browse. The intelligence pipeline will automatically begin processing.
           </p>
         </>
       )}
 
       {status === "uploading" && (
-        <div className="flex flex-col items-center text-blue-600">
-          <Loader2 size={32} className="animate-spin mb-4" />
-          <p className="text-sm font-medium">Uploading and scheduling processing...</p>
+        <div className="flex flex-col items-center text-[var(--color-claude-text)]">
+          <Loader2 size={36} className="animate-spin mb-5 text-[var(--color-claude-accent)]" />
+          <p className="text-sm font-medium">Ingesting dataset & scheduling pipeline...</p>
         </div>
       )}
 
       {status === "success" && (
-        <div className="flex flex-col items-center text-emerald-600">
-          <CheckCircle2 size={32} className="mb-4" />
+        <div className="flex flex-col items-center text-[#5C6E53]">
+          <CheckCircle2 size={40} className="mb-5" />
           <p className="text-sm font-medium">{message}</p>
         </div>
       )}
 
       {status === "error" && (
-        <div className="flex flex-col items-center text-red-600">
-          <AlertCircle size={32} className="mb-4" />
+        <div className="flex flex-col items-center text-red-700">
+          <AlertCircle size={40} className="mb-5" />
           <p className="text-sm font-medium">{message}</p>
         </div>
       )}

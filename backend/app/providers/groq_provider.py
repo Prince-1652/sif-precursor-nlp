@@ -72,6 +72,99 @@ class GroqProvider(AIProvider):
                 
         return await with_retry(call_api, max_retries=settings.AI_MAX_RETRIES, timeout=settings.AI_TIMEOUT_SECONDS)
 
+    async def get_second_opinion(self, text: str, sif_potential: bool, lsrs: list[str]) -> str:
+        sif_status = "SIF" if sif_potential else "Non-SIF"
+        lsr_str = ", ".join(lsrs) if lsrs else "None"
+        
+        system_instruction = (
+            "You are an expert Safety Auditor providing a professional second opinion. "
+            "You will be given a safety report narrative, and the initial system's classification for SIF (Serious Injury or Fatality) and Life-Saving Rules. "
+            "Critique this classification in 2 or 3 short, direct sentences. "
+            "IMPORTANT: Use a highly professional, objective, third-person tone. Do NOT use conversational language (e.g., avoid 'I agree', 'I disagree', 'In my opinion'). "
+            "Instead, state directly whether the classification is correct or incorrect, and provide the technical reasoning based on standard industrial safety principles."
+        )
+        
+        user_message = (
+            f"Narrative: {text}\n\n"
+            f"System Classification: {sif_status}, Rules matched: {lsr_str}\n\n"
+            "Provide your brief, professional AI Summary:"
+        )
+        
+        async def call_api():
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "openai/gpt-oss-20b",
+                        "messages": [
+                            {"role": "system", "content": system_instruction},
+                            {"role": "user", "content": user_message}
+                        ],
+                        "temperature": 0.2,
+                        "max_tokens": 400
+                    },
+                    timeout=settings.AI_TIMEOUT_SECONDS
+                )
+                
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"].strip()
+                
+        return await with_retry(call_api, max_retries=2, timeout=settings.AI_TIMEOUT_SECONDS)
+
+    async def get_ai_solution(self, text: str, sif_potential: bool, lsrs: list[str]) -> str:
+        sif_status = "SIF" if sif_potential else "Non-SIF"
+        lsr_str = ", ".join(lsrs) if lsrs else "None"
+        
+        system_instruction = (
+            "You are an expert Industrial Safety Engineer. "
+            "You will be given a safety report narrative and its system classification for SIF (Serious Injury or Fatality) and Life-Saving Rules. "
+            "Your task is to provide a strict, highly actionable preventative solution for the incident described. "
+            "IMPORTANT RULES:\n"
+            "1. Format your response as EXACTLY 2 or 3 short Markdown bullet points.\n"
+            "2. Keep the entire response extremely brief (maximum 3 sentences total).\n"
+            "3. DO NOT include any headings, categories, timelines, or introductory text. Just the bullet points.\n"
+            "4. If the narrative describes a completely safe situation, a 'good catch', a standard observation with no hazards, or where nothing bad happened, "
+            "you MUST explicitly state: 'Everything was handled perfectly and no corrective solutions are needed.'\n"
+            "5. Use a professional, objective, third-person tone. Do NOT use conversational language."
+        )
+        
+        user_message = (
+            f"Narrative: {text}\n\n"
+            f"System Classification: {sif_status}, Rules matched: {lsr_str}\n\n"
+            "Provide your brief, professional AI Proposed Solution:"
+        )
+        
+        async def call_api():
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "openai/gpt-oss-20b",
+                        "messages": [
+                            {"role": "system", "content": system_instruction},
+                            {"role": "user", "content": user_message}
+                        ],
+                        "temperature": 0.2,
+                        "max_tokens": 800
+                    },
+                    timeout=settings.AI_TIMEOUT_SECONDS
+                )
+                
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"].strip()
+                
+        return await with_retry(call_api, max_retries=2, timeout=settings.AI_TIMEOUT_SECONDS)
+
     async def generate_embedding(self, text: str) -> list[float]:
         # Groq does not currently support embeddings natively via openai compatible API, return zeros
         return [0.0] * 768

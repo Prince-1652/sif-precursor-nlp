@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "sif_db"
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost/sif_db"
     
+    GEMINI_API_KEYS: str = ""
     GEMINI_API_KEY: str = ""
     API_KEY: str = ""
     GROQ_API_KEY: str = ""

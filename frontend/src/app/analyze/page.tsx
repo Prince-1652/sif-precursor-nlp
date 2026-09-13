@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ShieldAlert, CheckCircle2, ChevronRight, Loader2, ArrowRight } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 export default function AnalyzePage() {
   const [text, setText] = useState("");
@@ -53,7 +54,7 @@ export default function AnalyzePage() {
         if (res.status === 429) {
           errorMsg = "Too many requests. Please slow down.";
         } else if (res.status >= 500) {
-          errorMsg = "Backend server is down or restarting due to a code change. Wait a few seconds and try again, or check your terminal for syntax errors.";
+          errorMsg = "Backend server is down or restarting due to a code change. Wait a few seconds and try again.";
         } else if (errorData?.detail) {
           if (Array.isArray(errorData.detail)) {
             errorMsg = errorData.detail.map((e: any) => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
@@ -64,111 +65,126 @@ export default function AnalyzePage() {
           }
         }
         setError(errorMsg);
-        console.error("Analysis failed:", errorData ? JSON.stringify(errorData) : `HTTP ${res.status}`);
       }
     } catch (e: any) {
       setError(e.message || "Network error occurred");
-      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700">
-      <div>
-        <h1 className="text-4xl font-bold text-white mb-2">Live Analysis</h1>
-        <p className="text-gray-400">Test the processing pipeline synchronously without writing to the database.</p>
+    <div className="space-y-10 animate-in fade-in duration-1000">
+      <div className="border-b border-[var(--color-claude-border)] pb-5">
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-[var(--color-claude-text)] mb-3 tracking-tight">Live Analysis</h1>
+        <p className="text-[var(--color-claude-text-secondary)] text-lg">Test the intelligence pipeline synchronously without database persistence.</p>
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-        {/* Unused metadata fields removed for clarity */}
+      <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-6 shadow-sm transition-all focus-within:border-[var(--color-claude-border-strong)] focus-within:shadow-md">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Paste an incident report here..."
-          className="w-full h-40 bg-black/40 border border-white/10 rounded-xl p-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4"
+          placeholder="Paste a narrative or incident report here..."
+          className="w-full h-48 bg-transparent text-[var(--color-claude-text)] placeholder-[var(--color-claude-text-secondary)] focus:outline-none resize-none mb-6 text-lg leading-relaxed italic font-serif"
         />
-        <button
-          onClick={handleAnalyze}
-          disabled={loading || !text.trim()}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-blue-500/20"
-        >
-          {loading ? <Loader2 size={18} className="animate-spin" /> : <ChevronRight size={18} />}
-          Run Analysis
-        </button>
+        <div className="flex justify-end border-t border-[var(--color-claude-border)] pt-6">
+          <button
+            onClick={handleAnalyze}
+            disabled={loading || !text.trim()}
+            className="px-8 py-3 bg-[var(--color-claude-accent)] hover:bg-[var(--color-claude-accent-hover)] text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-sm"
+          >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : <span>Run Pipeline</span>}
+            {!loading && <ChevronRight size={18} />}
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl animate-in fade-in flex items-center gap-3">
-          <ShieldAlert size={20} />
-          <span>{error}</span>
+        <div className="bg-red-50 text-red-700 border border-red-200 p-5 rounded-xl animate-in fade-in flex items-start gap-4">
+          <ShieldAlert size={20} className="mt-0.5 shrink-0" />
+          <span className="font-medium">{error}</span>
         </div>
       )}
 
       {result && (
-        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-          <h2 className="text-xl font-semibold text-white">Results</h2>
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700 pt-4">
+          <h2 className="text-2xl font-serif font-medium text-[var(--color-claude-text)] border-b border-[var(--color-claude-border)] pb-3">Analysis Results</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Left Column */}
-            <div className="space-y-6">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Pipeline Metrics</h3>
-                <div className="space-y-2 text-sm text-gray-300">
-                  <div className="flex justify-between p-2 bg-white/5 rounded">
-                    <span>Processing Path:</span>
-                    <span className="font-medium text-white">{result.processing_path || "N/A"}</span>
+            <div className="space-y-8">
+              <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-4">Pipeline Metrics</h3>
+                <div className="space-y-3 text-base">
+                  <div className="flex justify-between items-center py-2 border-b border-[var(--color-claude-border)]">
+                    <span className="text-[var(--color-claude-text-secondary)]">Processing Path:</span>
+                    <span className="font-medium text-[var(--color-claude-text)] bg-[var(--color-claude-bg-secondary)] px-2 py-1 rounded text-sm">{result.processing_path || "N/A"}</span>
                   </div>
-                  <div className="flex justify-between p-2 bg-white/5 rounded">
-                    <span>Review State:</span>
-                    <span className="font-medium text-white">{result.review_state || "N/A"}</span>
+                  <div className="flex justify-between items-center py-2 border-b border-[var(--color-claude-border)]">
+                    <span className="text-[var(--color-claude-text-secondary)]">Review State:</span>
+                    <span className="font-medium text-[var(--color-claude-text)]">{result.review_state || "N/A"}</span>
                   </div>
-                  <div className="flex justify-between p-2 bg-white/5 rounded">
-                    <span>AI Used:</span>
-                    <span className="font-medium text-white">{result.ai_used ? "Yes" : "No"}</span>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-[var(--color-claude-text-secondary)]">AI Used:</span>
+                    <span className="font-medium text-[var(--color-claude-text)]">{result.ai_used ? "Yes" : "No"}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                 <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Normalization Trace</h3>
+              <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-5 shadow-sm">
+                 <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-4">Normalization Trace</h3>
                  {result.normalization && result.normalization.normalization_trace && result.normalization.normalization_trace.length > 0 ? (
-                   <div className="space-y-2">
+                   <div className="space-y-3">
                      {result.normalization.normalization_trace.map((trace: any, idx: number) => (
-                       <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
-                         <span className="font-mono text-gray-300 truncate max-w-[100px]">"{trace.from}"</span>
-                         <ArrowRight size={12} />
-                         <span className="font-mono text-green-400 truncate max-w-[100px]">"{trace.to}"</span>
+                       <div key={idx} className="flex flex-col gap-1 text-base bg-[var(--color-claude-bg-secondary)] p-3 rounded-lg border border-[var(--color-claude-border)]">
+                         <span className="font-mono text-[var(--color-claude-text-secondary)] line-through decoration-red-300">"{trace.from}"</span>
+                         <span className="font-mono text-[var(--color-claude-text)]">"{trace.to}"</span>
                        </div>
                      ))}
                    </div>
                  ) : (
-                   <div className="text-gray-500 text-sm">No normalization needed.</div>
+                   <div className="text-[var(--color-claude-text-secondary)] text-base italic font-serif">No text normalization was required.</div>
                  )}
               </div>
+
+              {/* AI Summary in Left Column */}
+              {result.ai_summary && (
+                <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-5 shadow-sm">
+                  <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--color-claude-accent)]"></span>
+                    </span>
+                    AI Summary
+                  </h3>
+                  <p className="text-[var(--color-claude-text)] text-base leading-relaxed">
+                    {result.ai_summary}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Right Column */}
-            <div className="space-y-6">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Predictions</h3>
+            <div className="space-y-8">
+              <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-4">Predictions</h3>
                 {result.sif_prediction && (
-                  <div className={`p-4 rounded-xl border flex items-center gap-3 mb-4 ${result.sif_prediction.sif_potential ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'}`}>
-                    {result.sif_prediction.sif_potential ? <ShieldAlert size={24} /> : <CheckCircle2 size={24} />}
-                    <div>
-                      <div className="text-lg font-bold">{result.sif_prediction.sif_potential ? 'SIF Potential' : 'No SIF Potential'}</div>
-                      <div className="text-xs opacity-80">Risk Band: {result.sif_prediction.risk_band}</div>
+                  <div className={`p-5 rounded-lg border mb-5 ${result.sif_prediction.sif_potential ? 'bg-[#FCF5F3] border-[#F2DCD5] text-[var(--color-claude-accent)]' : 'bg-[#F2F6F3] border-[#DCE4DD] text-[#5C6E53]'}`}>
+                    <div className="flex items-start gap-4">
+                      {result.sif_prediction.sif_potential ? <ShieldAlert size={28} className="shrink-0 mt-1" /> : <CheckCircle2 size={28} className="shrink-0 mt-1" />}
+                      <div>
+                        <div className="text-xl font-serif font-medium">{result.sif_prediction.sif_potential ? 'SIF Potential Identified' : 'No SIF Potential'}</div>
+                        <div className="text-base mt-1 opacity-80">Risk Band: <span className="font-bold">{result.sif_prediction.risk_band}</span></div>
+                      </div>
                     </div>
                   </div>
                 )}
                 
                 {result.lsr_predictions && result.lsr_predictions.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-xs text-gray-500 mb-2">Life-Saving Rules</h4>
+                  <div>
+                    <h4 className="text-sm text-[var(--color-claude-text-secondary)] mb-3">Life-Saving Rules Triggered</h4>
                     <div className="flex flex-wrap gap-2">
                       {result.lsr_predictions.map((lsr: any, idx: number) => (
-                        <span key={idx} className="bg-orange-500/10 border border-orange-500/20 text-orange-400 px-3 py-1 rounded-md text-xs font-medium">
+                        <span key={idx} className="bg-white border border-[var(--color-claude-border-strong)] text-[var(--color-claude-text)] px-3 py-1.5 rounded-md text-sm font-medium shadow-sm">
                           {lsr.rule_id}
                         </span>
                       ))}
@@ -177,20 +193,44 @@ export default function AnalyzePage() {
                 )}
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Extracted Entities</h3>
+              <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-4">Extracted Entities</h3>
                 {result.entities && result.entities.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {result.entities.map((ent: any, idx: number) => (
-                      <span key={idx} className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-2 py-1 rounded text-xs font-medium">
-                        {ent.entity_type}: {ent.value}
+                      <span key={idx} className="bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border)] text-[var(--color-claude-text)] px-3 py-1.5 rounded-md text-sm font-medium">
+                        <span className="text-[var(--color-claude-text-secondary)] mr-1">{ent.entity_type}:</span> {ent.value}
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-gray-500 text-sm">No entities found.</div>
+                  <div className="text-[var(--color-claude-text-secondary)] text-base italic font-serif">No entities identified in text.</div>
                 )}
               </div>
+              {/* AI Solution in Right Column */}
+              {result.ai_solution && (
+                <div className="bg-white border border-[var(--color-claude-border)] rounded-xl p-5 shadow-sm">
+                  <h3 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                    </span>
+                    AI Proposed Solution
+                  </h3>
+                  <div className="text-[var(--color-claude-text)] text-base leading-relaxed markdown-content">
+                    <ReactMarkdown
+                      components={{
+                        ul: ({node, ...props}) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+                        ol: ({node, ...props}) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
+                        li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                        strong: ({node, ...props}) => <strong className="font-bold text-[var(--color-claude-text)]" {...props} />,
+                        p: ({node, ...props}) => <p className="mb-2" {...props} />
+                      }}
+                    >
+                      {result.ai_solution}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

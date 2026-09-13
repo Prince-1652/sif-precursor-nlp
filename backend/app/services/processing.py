@@ -353,7 +353,8 @@ async def process_pending_reports_async():
 
     # Process English records concurrently (fast, local execution)
     if english_ids:
-        sem = asyncio.Semaphore(50)
+        # Reduce concurrency to 5 to prevent SQLAlchemy QueuePool exhaustion
+        sem = asyncio.Semaphore(5)
         async def process_with_sem(rid):
             async with sem:
                 await process_report_async(rid)

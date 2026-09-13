@@ -53,7 +53,7 @@ def seed_db():
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         csv_path = os.path.join(base_dir, "synthetic_reports.csv")
         
-        if os.path.exists(csv_path):
+        if False and os.path.exists(csv_path):
             print(f"Loading synthetic reports from {csv_path}...")
             with open(csv_path, 'rb') as f:
                 content = f.read()

@@ -19,8 +19,8 @@ DICTIONARIES: Dict[str, List[str]] = {
         "confined space", "height", "spark", "pinch point", "spill"
     ],
     "BARRIER": [
-        "loto", "lockout tagout", "permit", "gas test", 
-        "guarding", "fall protection", "seatbelt", "barricade"
+        "loto", "lockout tagout", "lockout/tagout", "permit", "gas test", 
+        "guarding", "safety guard", "fall protection", "seatbelt", "barricade"
     ],
     "BODY_PART": [
         "head", "eye", "arm", "hand", "finger", "leg", "foot", "toe", 

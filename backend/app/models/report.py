@@ -33,6 +33,8 @@ class Report(Base):
     sif_score = Column(Numeric(6, 5), nullable=True)
     risk_band = Column(String(32), nullable=True)
     vector_embedding = Column(Vector(768), nullable=True)
+    ai_summary = Column(Text, nullable=True)
+    ai_solution = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)

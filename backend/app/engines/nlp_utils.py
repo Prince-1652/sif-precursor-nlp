@@ -2,7 +2,7 @@ import re
 
 # Centralized list of status/negation keywords.
 # By making this a single source of truth, all engines will agree on what constitutes a success/failure.
-NEGATION_WORDS = {"not", "no", "without", "failed", "missing", "bypassed", "absent", "cannot"}
+NEGATION_WORDS = {"not", "no", "without", "failed", "missing", "bypassed", "absent", "cannot", "ignored"}
 POSITIVE_WORDS = {"completed", "verified", "confirmed", "correctly", "properly", "used", "successful"}
 
 def get_token_context(text: str, start: int, end: int, window_size: int = 10) -> str:

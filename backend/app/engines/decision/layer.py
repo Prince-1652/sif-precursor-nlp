@@ -19,13 +19,8 @@ class DecisionEngine:
         if is_valid:
             contradictions = detect_contradictions(sif_result, lsr_results, entity_results)
             
-            # Auto-correct SIF if it was Low but LSR matches and barriers failed
-            if any("Low SIF potential predicted, despite LSR matches and failed barriers" in c for c in contradictions):
-                sif_result["sif_potential"] = True
-                sif_result["risk_band"] = "HIGH"
-                sif_result["score"] = 0.95
-                # Remove this specific contradiction since it's resolved
-                contradictions = [c for c in contradictions if "Low SIF potential predicted, despite LSR matches and failed barriers" not in c]
+            # Removed blind auto-upgrade to HIGH risk based on LSR matches and failed barriers.
+            # It will now fall through to REVIEW_RECOMMENDED.
             
         review_state = compute_review_state(sif_result, contradictions, is_valid)
         

@@ -11,10 +11,22 @@ class MalformedRequest(Exception):
 
 class GeminiProvider(AIProvider):
     def __init__(self, api_key: str = None):
-        key = api_key or settings.GEMINI_API_KEY
-        if not key:
-            raise ValueError("GEMINI_API_KEY not found in environment variables.")
-        self.client = genai.Client(api_key=key)
+        self.api_keys = []
+        if api_key:
+            self.api_keys.append(api_key)
+        else:
+            if hasattr(settings, "GEMINI_API_KEYS") and settings.GEMINI_API_KEYS:
+                self.api_keys = [k.strip() for k in settings.GEMINI_API_KEYS.split(',') if k.strip()]
+            elif settings.GEMINI_API_KEY:
+                self.api_keys.append(settings.GEMINI_API_KEY)
+                
+        if not self.api_keys:
+            raise ValueError("No Gemini API keys found in environment variables.")
+            
+    def _get_client(self):
+        import random
+        key = random.choice(self.api_keys)
+        return genai.Client(api_key=key)
         
     def _load_prompt(self, version: str) -> str:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -34,7 +46,8 @@ class GeminiProvider(AIProvider):
         )
         
         async def call_api():
-            response = self.client.models.generate_content(
+            client = self._get_client()
+            response = client.models.generate_content(
                 model='gemini-3.6-flash',
                 contents=user_message,
                 config=types.GenerateContentConfig(
@@ -63,7 +76,8 @@ class GeminiProvider(AIProvider):
 
     async def generate_embedding(self, text: str) -> list[float]:
         async def call_api():
-            result = self.client.models.embed_content(
+            client = self._get_client()
+            result = client.models.embed_content(
                 model="gemini-embedding-2",
                 contents=text,
                 config=types.EmbedContentConfig(output_dimensionality=768)

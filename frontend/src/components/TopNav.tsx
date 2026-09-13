@@ -8,31 +8,51 @@ export function TopNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-[#050505]/80 backdrop-blur-xl border-b border-white/5">
-      <div className="w-full px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3 mr-4">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-              <ShieldCheck size={20} />
+    <nav className="sticky top-0 z-50 w-full bg-[var(--color-claude-bg)]/80 backdrop-blur-xl border-b border-[var(--color-claude-border)]">
+      <div className="w-full px-6 md:px-10 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-10">
+          <Link href="/" className="flex items-center gap-3 mr-4 group">
+            <div className="w-8 h-8 rounded-md bg-[var(--color-claude-accent)] flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
+              <ShieldCheck size={18} strokeWidth={2.5} />
             </div>
-            <span className="font-semibold text-lg tracking-tight text-gray-100">Safety Intelligence</span>
-          </div>
-          <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-400">
-            <Link href="/" className={`${pathname === "/" ? "text-white" : "hover:text-white transition-colors"}`}>Dashboard</Link>
-            <Link href="/analyze" className={`${pathname === "/analyze" ? "text-white" : "hover:text-white transition-colors"}`}>Analyze</Link>
-            <Link href="/reports" className={`${pathname === "/reports" ? "text-white" : "hover:text-white transition-colors"}`}>Reports</Link>
-            <Link href="/patterns" className={`${pathname === "/patterns" ? "text-white" : "hover:text-white transition-colors"}`}>Patterns</Link>
-            <Link href="/admin" className={`${pathname === "/admin" ? "text-white" : "hover:text-white transition-colors"}`}>Admin</Link>
+            <span className="font-serif font-bold text-2xl tracking-tight text-[var(--color-claude-text)]">
+              Safety Intelligence
+            </span>
+          </Link>
+          <div className="hidden md:flex items-center gap-8 text-base font-bold">
+            <NavLink href="/" active={pathname === "/"}>Dashboard</NavLink>
+            <NavLink href="/analyze" active={pathname === "/analyze"}>Analyze</NavLink>
+            <NavLink href="/reports" active={pathname === "/reports"}>Reports</NavLink>
+            <NavLink href="/patterns" active={pathname === "/patterns"}>Patterns</NavLink>
+            <NavLink href="/admin" active={pathname === "/admin"}>Admin</NavLink>
           </div>
         </div>
         <div>
           {pathname !== "/ingestion" && (
-            <Link href="/ingestion" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-sm font-medium transition-colors">
-              Upload CSV
+            <Link 
+              href="/ingestion" 
+              className="px-6 py-2.5 bg-[var(--color-claude-accent)] hover:bg-[var(--color-claude-accent-hover)] text-white rounded-md text-base font-bold transition-colors shadow-sm"
+            >
+              Upload Data
             </Link>
           )}
         </div>
       </div>
     </nav>
+  );
+}
+
+function NavLink({ href, active, children }: { href: string, active: boolean, children: React.ReactNode }) {
+  return (
+    <Link 
+      href={href} 
+      className={`transition-colors ${
+        active 
+          ? "text-[var(--color-claude-text)] border-b-2 border-[var(--color-claude-accent)] pb-1 -mb-[3px]" 
+          : "text-[var(--color-claude-text-secondary)] hover:text-[var(--color-claude-text)]"
+      }`}
+    >
+      {children}
+    </Link>
   );
 }

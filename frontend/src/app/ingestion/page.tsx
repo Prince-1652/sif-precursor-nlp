@@ -1,43 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UploadDropzone } from "@/components/UploadDropzone";
 import { ManualTextInput } from "@/components/ManualTextInput";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function IngestionPage() {
   const [status, setStatus] = useState<"idle" | "uploading" | "processing" | "done">("idle");
-  const [jobId, setJobId] = useState<string | null>(null);
+  const router = useRouter();
   
-  // A complete ingestion module with polling would ping a /jobs endpoint.
-  // For now we'll simulate the UX flow.
+  useEffect(() => {
+    if (status === "done") {
+      const t = setTimeout(() => {
+        router.push("/reports");
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [status, router]);
+
   const handleSuccess = () => {
     setStatus("done");
-    setTimeout(() => setStatus("idle"), 3000);
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-700">
-      <div>
-        <h1 className="text-4xl font-bold text-white mb-2">Ingestion</h1>
-        <p className="text-gray-400">Upload CSVs or submit manual reports for automated safety analysis.</p>
+    <div className="space-y-8 animate-in fade-in duration-1000 relative">
+      {status === "done" && (
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-in fade-in">
+          <CheckCircle2 size={64} className="text-[#5C6E53] mb-6" />
+          <p className="text-2xl font-serif font-medium text-[var(--color-claude-text)]">Ingestion Successful</p>
+          <p className="text-[var(--color-claude-text-secondary)] mt-2">The pipeline is now analyzing the data.</p>
+        </div>
+      )}
+      
+      <div className="border-b border-[var(--color-claude-border)] pb-5">
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-[var(--color-claude-text)] mb-3 tracking-tight">Data Ingestion</h1>
+        <p className="text-[var(--color-claude-text-secondary)] text-lg">Upload datasets or submit individual narratives for intelligence processing.</p>
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-8 relative overflow-hidden">
-        {status === "done" && (
-          <div className="absolute inset-0 bg-green-500/10 backdrop-blur-sm z-10 flex flex-col items-center justify-center animate-in fade-in">
-            <CheckCircle2 size={48} className="text-green-500 mb-4" />
-            <p className="text-xl font-medium text-white">Upload Complete & Processing Started!</p>
-          </div>
-        )}
-        
-        <h2 className="text-xl font-semibold text-white mb-6">Bulk Upload (CSV)</h2>
-        <UploadDropzone onUploadSuccess={handleSuccess} />
-      </div>
+      <div className="grid grid-cols-1 gap-8">
+        <section>
+          <h2 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-6">Bulk Upload (CSV)</h2>
+          <UploadDropzone onUploadSuccess={handleSuccess} />
+        </section>
 
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
-        <h2 className="text-xl font-semibold text-white mb-6">Manual Entry</h2>
-        <ManualTextInput onUploadSuccess={handleSuccess} />
+        <section>
+          <h2 className="text-sm font-bold text-[var(--color-claude-text-secondary)] uppercase tracking-widest mb-6">Manual Entry</h2>
+          <ManualTextInput onUploadSuccess={handleSuccess} />
+        </section>
       </div>
     </div>
   );

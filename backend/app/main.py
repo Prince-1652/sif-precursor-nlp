@@ -104,7 +104,7 @@ def health_dependencies(request: Request):
         if db:
             db.close()
         
-    ai_status = "ok" if settings.APP_MODE == "offline" or settings.GEMINI_API_KEY else "not_configured"
+    ai_status = "ok" if settings.APP_MODE == "offline" or ((settings.GEMINI_API_KEY or settings.GEMINI_API_KEYS) and settings.GROQ_API_KEY) else "not_configured"
         
     return {
         "database": db_status,
