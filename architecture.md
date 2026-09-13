@@ -59,6 +59,7 @@ The application avoids relying entirely on LLMs by using a **Hybrid Pipeline**.
 - **Deterministic Rules & Token-Awareness:** Fast, reliable rules engines are used first. The system utilizes `nlp_utils.py` for token-aware context extraction, ensuring word boundaries are respected.
 - **Dynamic Metadata Routing:** The report's metadata (e.g., `report_type`) is piped directly into the engines to intelligently apply risk multipliers (e.g., 1.3x for Incidents) and bypass irrelevant rules (e.g., skipping driving checks for spills).
 - **LLM Fallback/Augmentation:** Large Language Models (Gemini/Groq) are used strictly for normalization (translating complex slang/Hinglish to standard English) and entity extraction, where deterministic rules fall short.
+- **Sequential AI Insights:** LLM providers handle sequential fetching for advanced insights (AI Summary and AI Suggestions) triggered explicitly on the report detail and live analysis pages.
 
 ### 4. The Persistence Layer
 An **SQLAlchemy ORM** connects the application logic to a robust **PostgreSQL** database. This provides ACID compliance, high concurrency for background workers, structured schemas (Reports, Predictions, Entities), and future-proof scaling for pgvector.

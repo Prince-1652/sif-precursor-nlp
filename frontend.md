@@ -23,22 +23,28 @@ frontend/
 
 ### 1. Dashboard (`/page.tsx`)
 The dashboard is the landing page. It fetches the `/api/v1/analytics/dashboard` endpoint and renders:
-- **Top Metrics:** Four `MetricCard` components showing "Total Reports", "SIF Potential", and "Pending Review". These cards act as dynamic links—clicking "SIF Potential" pushes the user to `/reports?riskFilter=SIF`.
+- **Top Metrics:** Four `MetricCard` components showing "Total Reports", "SIF Potential", and "Pending Review". These cards act as dynamic links—clicking "SIF Potential" pushes the user to `/reports?riskFilter=SIF`. 
 - **Visualizations:** Uses `recharts` to render a BarChart for Monthly Trends and a PieChart for the distribution of Life Saving Rules violations.
 
-### 2. Reports Table (`/reports/page.tsx`)
+### 2. Ingestion (`/ingestion/page.tsx`)
+The primary data intake screen for single or bulk operations.
+- **Upload Dropzone:** Upload a CSV for bulk processing via background tasks.
+- **Manual Text Input:** A form to paste or type a single safety observation. Clicking "Analyze" sends the payload and safely redirects to the reports table using `useEffect` hooks.
+
+### 3. Reports Table (`/reports/page.tsx`)
 This page fetches the `/api/v1/reports` endpoint to display a comprehensive list of all observations. 
 - **URL-Driven State:** It reads `searchParams` (`statusFilter` and `riskFilter`) directly from the URL. This allows users to bookmark specific views (e.g., "Show me all Pending SIF reports").
 - **Real-time Filtering:** A client-side `.filter()` method reacts instantly to the search box, updating the table without needing a full server round-trip.
 
-### 3. Review Interface (`/reports/[id]/page.tsx`)
+### 4. Review Interface (`/reports/[id]/page.tsx`)
 When a report is clicked, the user enters the drill-down view.
-- **Split View:** The screen is divided. The left side displays the raw, unaltered text entered by the field worker. The right side displays the AI's deductions: exact text snippets that triggered SIF rules, extracted entities (People, Hazards), and the Final Risk Score.
-- **Action Buttons:** At the bottom, the user can override the AI by clicking "Confirm", "Reject", or "Edit", which POSTs back to the backend and updates the `processing_status`.
+- **Split View:** The screen is divided. The left side displays the AI Summary. The right side displays the AI Suggestions, extracted entities (People, Hazards), and Life Saving Rules.
+- **Concurrency Control:** The "Override / Edit" button is intelligently disabled while AI insights are being generated to prevent race conditions and duplicate API calls.
+- **Action Buttons:** At the bottom, the user can override the AI by clicking "Confirm" or "Edit", which POSTs back to the backend and updates the `review_actions` table.
 
-### 4. Live Analysis Sandbox (`/analyze/page.tsx`)
+### 5. Live Analysis Sandbox (`/analyze/page.tsx`)
 A testing ground to observe the pipeline in real-time.
-- **Pure Sandbox:** Metadata inputs (like Source ID or Date) are intentionally stripped from the UI to focus strictly on text extraction algorithms.
+- **Pure Sandbox:** Metadata inputs (like Source ID or Date) are intentionally stripped from the UI to focus strictly on text extraction algorithms. Clicking "Analyze" fetches live SIF predictions, AI Summaries, and AI Suggestions.
 - **Auto-Retry Resilience:** Includes an intelligent `fetch` retry loop. If the backend is actively reloading due to a code change (triggering a Next.js `500 ECONNREFUSED` proxy error), the frontend waits and auto-retries, preventing crash screens during rapid development.
 
 ## Error Boundaries

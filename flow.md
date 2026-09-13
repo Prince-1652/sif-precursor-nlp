@@ -16,9 +16,9 @@ This document details the complete end-to-end flow of data through the SIF Precu
 3. **Drill-down:** The user clicks the "SIF Potential" card. The Next.js router transitions to `/reports?riskFilter=SIF`.
 
 ### C. Review & Override
-1. **Report Detail:** The user clicks a specific report from the table to view its raw text vs. the AI's extraction (Entities, Hazards, Life Saving Rules).
-2. **Human-in-the-Loop:** If the Decision Engine flagged the report for manual review (e.g., conflicting data or low confidence), the user can accept, edit, or reject the AI's findings.
-3. **Confirmation:** Clicking "Confirm" POSTs a decision back to the API, updating the report's status to `COMPLETED` and removing it from the pending review queue.
+1. **Report Detail:** The user clicks a specific report from the table to view its raw text vs. the AI's extraction (Entities, Hazards, Life Saving Rules). The UI fetches sequential AI Summaries and AI Suggestions from the LLM provider for contextual review.
+2. **Human-in-the-Loop:** The user can confirm or edit the AI's findings. The UI blocks the "Override / Edit" button during active AI generations to prevent race conditions.
+3. **Confirmation:** Clicking "Confirm" or saving an "Edit" POSTs a decision back to the API, updating the report's status to `COMPLETED` and logging the action in the `review_actions` table.
 
 ---
 

@@ -8,8 +8,10 @@ backend/
 ├── app/
 │   ├── api/
 │   │   ├── endpoints/
-│   │   │   ├── analytics.py   # Dashboard aggregation queries
-│   │   │   └── reports.py     # Upload, manual creation, and review endpoints
+│   │   │   ├── dashboard.py   # Dashboard aggregation queries
+│   │   │   ├── reports.py     # Upload, manual creation, review, and AI insights endpoints
+│   │   │   ├── jobs.py        # Background task progress endpoints
+│   │   │   └── search.py      # Search operations
 │   ├── core/
 │   │   ├── config.py          # Environment variables and Pydantic BaseSettings
 │   │   └── security.py        # Rate limiting and CORS configurations

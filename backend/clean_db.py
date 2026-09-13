@@ -15,6 +15,7 @@ def clean_db():
         from app.models.normalization import ReportNormalization
         from app.models.sif_prediction import SIFPrediction
         from app.models.evidence import EvidenceItem
+        from app.models.review import ReviewAction
         
         db.query(Entity).delete()
         db.query(Barrier).delete()
@@ -24,6 +25,7 @@ def clean_db():
         db.query(AuditEvent).delete()
         db.query(ProcessingAttempt).delete()
         db.query(ReportNormalization).delete()
+        db.query(ReviewAction).delete()
         db.query(Report).delete()
         db.query(ProcessingJob).delete()
         

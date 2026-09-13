@@ -36,11 +36,9 @@ The SIF Precursor system is built using an aggressive, modern tech stack designe
 
 ## Artificial Intelligence & NLP
 
-### Primary LLM Provider: Google Gemini API
-- **Why chosen:** Gemini provides excellent reasoning capabilities and vast context windows, making it highly effective for text normalization, translating complex site-specific slang, and extracting contextual entities from safety reports.
-
-### Fallback LLM Provider: Groq
-- **Why chosen:** Included as a secondary provider. Used to ensure system resilience.
+### Primary LLM Providers: Google Gemini & Groq
+- **Why chosen (Gemini):** Gemini provides excellent reasoning capabilities and vast context windows, making it highly effective for text normalization and translating complex site-specific slang.
+- **Why chosen (Groq):** Groq provides ultra-low latency inference for Llama/OpenAI-compatible models. It is heavily utilized for generating sequential AI Summaries and AI Suggestions for real-time review interfaces.
 
 ### Language Detection: FastText
 - **Why chosen:** An ultra-fast, lightweight NLP model created by Facebook. It runs locally and deterministically, taking microseconds to detect a language. This was chosen over asking an LLM "what language is this?" which would waste precious API time.

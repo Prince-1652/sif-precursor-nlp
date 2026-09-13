@@ -30,3 +30,8 @@ The final step in the pipeline. It gathers the results from the SIF, LSR, and En
 - **Calculating Confidence:** If the SIF engine generated a high score, but the Entity engine failed to find any `HAZARD` entities, the Decision Engine lowers the overall confidence score.
 - **Contradiction Checking:** It actively looks for conflicting conclusions between the deterministic and AI engines.
 - **Final Status:** If confidence is low or contradictions exist, it overrides the `COMPLETED` status and marks the report as `REVIEW_REQUIRED`, ensuring a "Human-in-the-Loop" for uncertain data.
+
+## 6. Sequential AI Insights (Summary & Solutions)
+Used selectively by the frontend for detailed report views or live analysis.
+- **How it works:** Once deterministic calculations are complete, the LLM provides two sequential passes: first, a concise AI Summary that professionally evaluates the SIF status; second, actionable AI Suggestions (preventative solutions) formatted strictly as bullet points.
+- **Strict Guardrails:** The LLM is heavily prompted to remain objective and explicitly state "No solution needed" for positive safety observations (e.g., Good Catches).
