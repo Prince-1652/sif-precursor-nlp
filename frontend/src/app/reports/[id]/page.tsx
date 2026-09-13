@@ -284,7 +284,7 @@ export default function ReportDetailPage() {
                 <span className={`${loadingSolution ? 'animate-ping' : ''} absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75`}></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
               </span>
-              AI Proposed Solution
+              AI Suggestions
             </h3>
             
             {loadingSolution ? (
@@ -405,8 +405,12 @@ export default function ReportDetailPage() {
                 <button onClick={() => handleReview("CONFIRM")} className="w-full bg-[var(--color-claude-text)] hover:bg-[#1a1816] text-white font-medium py-3 rounded-xl transition-colors shadow-sm">
                   Confirm Machine Decision
                 </button>
-                <button onClick={startEditing} className="w-full bg-white hover:bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border-strong)] text-[var(--color-claude-text)] font-medium py-3 rounded-xl transition-colors shadow-sm">
-                  Override / Edit
+                <button 
+                  onClick={startEditing} 
+                  disabled={loadingSummary || loadingSolution}
+                  className="w-full bg-white hover:bg-[var(--color-claude-bg-secondary)] border border-[var(--color-claude-border-strong)] text-[var(--color-claude-text)] font-medium py-3 rounded-xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loadingSummary || loadingSolution ? "AI Generating... Please Wait" : "Override / Edit"}
                 </button>
               </div>
             ) : (

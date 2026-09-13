@@ -1,0 +1,101 @@
+source_record_id,report_type,original_text
+INC-001,Unsafe Condition,Unsafe condition: ignored lockout/tagout procedure involving pressure relief valve at generator room.
+INC-002,Spill,Small chemical drum leak detected near eastern rig. Observed missing safety guard.
+INC-003,Spill,Small electrical panel leak detected near pump station 2. Observed missing safety guard.
+INC-004,Injury,Worker found exposed wiring near loading dock involving electrical panel. First aid required.
+INC-005,Near Miss,A forklift failed to open during testing near main deck. No injuries reported but high potential for harm.
+INC-006,Unsafe Act,Worker observed operating electrical panel unsafely at generator room. Slipped on wet floor.
+INC-007,Injury,Worker dropped a tool near eastern rig involving conveyor belt. First aid required.
+INC-008,Unsafe Act,Worker observed operating forklift unsafely at tank 4. Found exposed wiring.
+INC-009,Unsafe Act,Worker observed operating pressure relief valve unsafely at tank 4. Found exposed wiring.
+INC-010,Unsafe Act,Worker observed operating pressure relief valve unsafely at pump station 2. Dropped a tool.
+INC-011,Unsafe Act,Worker observed operating electrical panel unsafely at warehouse zone A. Failed to open during testing.
+INC-012,Unsafe Condition,Unsafe condition: swung unexpectedly involving pressure relief valve at eastern rig.
+INC-013,Unsafe Condition,Unsafe condition: failed to open during testing involving conveyor belt at pump station 2.
+INC-014,Unsafe Condition,Unsafe condition: noticed unusual vibration involving crane load at valve V-102.
+INC-015,Spill,Small staircase leak detected near warehouse zone A. Ignored lockout/tagout procedure.
+INC-016,Unsafe Condition,Unsafe condition: slipped on wet floor involving electrical panel at main deck.
+INC-017,Spill,Small staircase leak detected near warehouse zone B. Observed missing safety guard.
+INC-018,Injury,Worker reported a minor cut near pump station 2 involving staircase. First aid required.
+INC-019,Equipment Failure,The crane load at scaffolding on level 3 slipped on wet floor. Operations halted temporarily.
+INC-020,Unsafe Act,Worker observed operating crude oil unsafely at scaffolding on level 3. Detected a leak.
+INC-021,Spill,Small crude oil leak detected near eastern rig. Reported a minor cut.
+INC-022,Injury,Worker dropped a tool near pump station 2 involving wrench. First aid required.
+INC-023,Unsafe Act,Worker observed operating pressure relief valve unsafely at valve V-102. Dropped a tool.
+INC-024,Equipment Failure,The chemical drum at scaffolding on level 3 dropped a tool. Operations halted temporarily.
+INC-025,Near Miss,A crane load noticed unusual vibration near generator room. No injuries reported but high potential for harm.
+INC-026,Unsafe Act,Worker observed operating forklift unsafely at scaffolding on level 3. Failed to open during testing.
+INC-027,Near Miss,A conveyor belt observed missing safety guard near eastern rig. No injuries reported but high potential for harm.
+INC-028,Injury,Worker dropped a tool near valve V-102 involving crane load. First aid required.
+INC-029,Injury,Worker swung unexpectedly near eastern rig involving crane load. First aid required.
+INC-030,Unsafe Act,Worker observed operating chemical drum unsafely at main deck. Detected a leak.
+INC-031,Unsafe Act,Worker observed operating wrench unsafely at eastern rig. Found exposed wiring.
+INC-032,Spill,Small crane load leak detected near valve V-102. Noticed unusual vibration.
+INC-033,Injury,Worker observed missing safety guard near eastern rig involving staircase. First aid required.
+INC-034,Near Miss,A conveyor belt noticed unusual vibration near main deck. No injuries reported but high potential for harm.
+INC-035,Unsafe Condition,Unsafe condition: failed to open during testing involving crane load at pump station 2.
+INC-036,Equipment Failure,The pressure relief valve at loading dock detected a leak. Operations halted temporarily.
+INC-037,Equipment Failure,The chemical drum at generator room noticed unusual vibration. Operations halted temporarily.
+INC-038,Near Miss,A wrench detected a leak near main deck. No injuries reported but high potential for harm.
+INC-039,Near Miss,A crude oil reported a minor cut near valve V-102. No injuries reported but high potential for harm.
+INC-040,Unsafe Act,Worker observed operating chemical drum unsafely at scaffolding on level 3. Slipped on wet floor.
+INC-041,Unsafe Condition,Unsafe condition: reported a minor cut involving wrench at tank 4.
+INC-042,Spill,Small crane load leak detected near warehouse zone B. Slipped on wet floor.
+INC-043,Unsafe Act,Worker observed operating wrench unsafely at warehouse zone A. Swung unexpectedly.
+INC-044,Spill,Small staircase leak detected near eastern rig. Detected a leak.
+INC-045,Equipment Failure,The safety harness at main deck noticed unusual vibration. Operations halted temporarily.
+INC-046,Spill,Small pressure relief valve leak detected near tank 4. Found exposed wiring.
+INC-047,Unsafe Condition,Unsafe condition: detected a leak involving pressure relief valve at generator room.
+INC-048,Unsafe Act,Worker observed operating conveyor belt unsafely at tank 4. Observed missing safety guard.
+INC-049,Spill,Small wrench leak detected near warehouse zone A. Failed to open during testing.
+INC-050,Near Miss,A safety harness slipped on wet floor near main deck. No injuries reported but high potential for harm.
+INC-051,Equipment Failure,The crude oil at pump station 2 slipped on wet floor. Operations halted temporarily.
+INC-052,Injury,Worker found exposed wiring near tank 4 involving electrical panel. First aid required.
+INC-053,Unsafe Condition,Unsafe condition: swung unexpectedly involving staircase at generator room.
+INC-054,Unsafe Act,Worker observed operating conveyor belt unsafely at eastern rig. Failed to open during testing.
+INC-055,Near Miss,A wrench noticed unusual vibration near warehouse zone B. No injuries reported but high potential for harm.
+INC-056,Equipment Failure,The crane load at valve V-102 observed missing safety guard. Operations halted temporarily.
+INC-057,Spill,Small pressure relief valve leak detected near main deck. Slipped on wet floor.
+INC-058,Unsafe Condition,Unsafe condition: reported a minor cut involving staircase at warehouse zone B.
+INC-059,Unsafe Condition,Unsafe condition: dropped a tool involving pressure relief valve at warehouse zone A.
+INC-060,Unsafe Act,Worker observed operating forklift unsafely at generator room. Detected a leak.
+INC-061,Injury,Worker reported a minor cut near generator room involving crude oil. First aid required.
+INC-062,Unsafe Act,Worker observed operating crude oil unsafely at warehouse zone A. Noticed unusual vibration.
+INC-063,Spill,Small wrench leak detected near warehouse zone A. Detected a leak.
+INC-064,Near Miss,A crude oil swung unexpectedly near eastern rig. No injuries reported but high potential for harm.
+INC-065,Equipment Failure,The crude oil at generator room noticed unusual vibration. Operations halted temporarily.
+INC-066,Unsafe Condition,Unsafe condition: noticed unusual vibration involving staircase at warehouse zone B.
+INC-067,Unsafe Condition,Unsafe condition: failed to open during testing involving chemical drum at eastern rig.
+INC-068,Equipment Failure,The chemical drum at warehouse zone B dropped a tool. Operations halted temporarily.
+INC-069,Spill,Small conveyor belt leak detected near warehouse zone A. Slipped on wet floor.
+INC-070,Injury,Worker swung unexpectedly near main deck involving electrical panel. First aid required.
+INC-071,Near Miss,A crane load found exposed wiring near eastern rig. No injuries reported but high potential for harm.
+INC-072,Unsafe Condition,Unsafe condition: noticed unusual vibration involving crane load at generator room.
+INC-073,Unsafe Condition,Unsafe condition: found exposed wiring involving staircase at loading dock.
+INC-074,Spill,Small safety harness leak detected near valve V-102. Ignored lockout/tagout procedure.
+INC-075,Unsafe Condition,Unsafe condition: found exposed wiring involving chemical drum at main deck.
+INC-076,Spill,Small electrical panel leak detected near loading dock. Dropped a tool.
+INC-077,Injury,Worker detected a leak near loading dock involving electrical panel. First aid required.
+INC-078,Unsafe Condition,Unsafe condition: reported a minor cut involving crude oil at tank 4.
+INC-079,Injury,Worker dropped a tool near pump station 2 involving conveyor belt. First aid required.
+INC-080,Near Miss,A crude oil slipped on wet floor near eastern rig. No injuries reported but high potential for harm.
+INC-081,Unsafe Condition,Unsafe condition: detected a leak involving forklift at warehouse zone A.
+INC-082,Unsafe Condition,Unsafe condition: ignored lockout/tagout procedure involving safety harness at warehouse zone A.
+INC-083,Spill,Small crane load leak detected near loading dock. Failed to open during testing.
+INC-084,Unsafe Condition,Unsafe condition: observed missing safety guard involving chemical drum at main deck.
+INC-085,Spill,Small chemical drum leak detected near tank 4. Failed to open during testing.
+INC-086,Spill,Small electrical panel leak detected near loading dock. Swung unexpectedly.
+INC-087,Unsafe Act,Worker observed operating crude oil unsafely at valve V-102. Failed to open during testing.
+INC-088,Spill,Small electrical panel leak detected near scaffolding on level 3. Observed missing safety guard.
+INC-089,Equipment Failure,The chemical drum at warehouse zone B swung unexpectedly. Operations halted temporarily.
+INC-090,Spill,Small chemical drum leak detected near tank 4. Reported a minor cut.
+INC-091,Spill,Small crane load leak detected near scaffolding on level 3. Swung unexpectedly.
+INC-092,Spill,Small pressure relief valve leak detected near generator room. Failed to open during testing.
+INC-093,Unsafe Act,Worker observed operating wrench unsafely at main deck. Found exposed wiring.
+INC-094,Spill,Small conveyor belt leak detected near main deck. Failed to open during testing.
+INC-095,Injury,Worker swung unexpectedly near generator room involving chemical drum. First aid required.
+INC-096,Unsafe Condition,Unsafe condition: detected a leak involving safety harness at valve V-102.
+INC-097,Near Miss,A electrical panel found exposed wiring near generator room. No injuries reported but high potential for harm.
+INC-098,Unsafe Act,Worker observed operating electrical panel unsafely at main deck. Failed to open during testing.
+INC-099,Equipment Failure,The wrench at scaffolding on level 3 detected a leak. Operations halted temporarily.
+INC-100,Equipment Failure,The conveyor belt at pump station 2 failed to open during testing. Operations halted temporarily.

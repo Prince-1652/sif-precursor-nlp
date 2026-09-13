@@ -89,7 +89,7 @@ export default function DashboardPage() {
 
       {/* Top Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MetricCard title="Total Reports" value={summary.total_reports} trend={summary.volume_trend} href="/reports" />
+        <MetricCard title="Total Reports" value={summary.total_reports} href="/reports" />
         <MetricCard title="SIF Potential" value={summary.sif_count} subtext={`${(summary.sif_percentage * 100).toFixed(1)}% of total`} color="text-[var(--color-claude-accent)]" trend={summary.sif_trend} href="/reports?riskFilter=SIF" />
         <MetricCard title="Pending Review" value={summary.review_count} href="/reports?statusFilter=PENDING_REVIEW" />
       </div>

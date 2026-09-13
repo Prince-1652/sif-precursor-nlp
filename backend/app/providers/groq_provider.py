@@ -128,8 +128,8 @@ class GroqProvider(AIProvider):
             "1. Format your response as EXACTLY 2 or 3 short Markdown bullet points.\n"
             "2. Keep the entire response extremely brief (maximum 3 sentences total).\n"
             "3. DO NOT include any headings, categories, timelines, or introductory text. Just the bullet points.\n"
-            "4. If the narrative describes a completely safe situation, a 'good catch', a standard observation with no hazards, or where nothing bad happened, "
-            "you MUST explicitly state: 'Everything was handled perfectly and no corrective solutions are needed.'\n"
+            "4. If the narrative describes a completely safe situation, a 'good catch', a standard observation with no hazards, or where no solution is needed, "
+            "you MUST explicitly state ONLY: 'No solution needed.' Do not add any other text.\n"
             "5. Use a professional, objective, third-person tone. Do NOT use conversational language."
         )
         

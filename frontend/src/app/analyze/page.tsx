@@ -93,7 +93,7 @@ export default function AnalyzePage() {
             disabled={loading || !text.trim()}
             className="px-8 py-3 bg-[var(--color-claude-accent)] hover:bg-[var(--color-claude-accent-hover)] text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-sm"
           >
-            {loading ? <Loader2 size={18} className="animate-spin" /> : <span>Run Pipeline</span>}
+            {loading ? <Loader2 size={18} className="animate-spin" /> : <span>Analyze</span>}
             {!loading && <ChevronRight size={18} />}
           </button>
         </div>
@@ -214,7 +214,7 @@ export default function AnalyzePage() {
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                     </span>
-                    AI Proposed Solution
+                    AI Suggestions
                   </h3>
                   <div className="text-[var(--color-claude-text)] text-base leading-relaxed markdown-content">
                     <ReactMarkdown

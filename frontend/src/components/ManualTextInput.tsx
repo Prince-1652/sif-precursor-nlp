@@ -85,7 +85,7 @@ export function ManualTextInput({ onUploadSuccess }: ManualTextInputProps) {
           {status === "submitting" ? (
             <><Loader2 size={18} className="animate-spin" /> Ingesting...</>
           ) : (
-            <><Send size={18} /> Submit to Pipeline</>
+            <><Send size={18} /> Analyze</>
           )}
         </button>
       </div>
